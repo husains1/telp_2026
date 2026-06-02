@@ -3,359 +3,233 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Vault — security is the product (standalone demo)</title>
+<title>Vault — Online Banking</title>
 <style>
   :root{
-    --bg:#0b0f1a;--panel:#131a2b;--panel-2:#1b2436;--ink:#e8edf6;--muted:#8a97b1;
-    --accent:#3d7eff;--gold:#d9a441;--danger:#e2493b;--ok:#2faa6a;--line:#26314a;
+    --bg:#eef1f6;--card:#ffffff;--ink:#1a2233;--muted:#6b7686;--line:#e2e7ef;
+    --brand:#1f4fd6;--brand-dark:#16389c;--ok:#1f9d57;--danger:#d8463a;--gold:#b7791f;
     font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink)}
-  .topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#0e1422,#0b0f1a);flex-wrap:wrap;gap:12px}
-  .brand{display:flex;flex-direction:column}
-  .logo{font-weight:800;letter-spacing:2px;font-size:20px}
-  .tagline{color:var(--muted);font-size:12px}
-  .who{display:flex;flex-direction:column;align-items:center}
-  .who .cust{font-weight:700}.who .tier{color:var(--muted);font-size:12px}
-  .scenarios{display:flex;gap:8px;flex-wrap:wrap}
-  .reset{background:var(--gold);color:#1a1300;border:none;padding:10px 16px;border-radius:8px;font-weight:700;cursor:pointer}
-  .ghostbtn{background:transparent;color:var(--muted);border:1px solid var(--line);padding:10px 14px;border-radius:8px;font-weight:600;cursor:pointer}
-  .grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;padding:24px 28px;max-width:1200px;margin:0 auto}
-  @media(max-width:900px){.grid{grid-template-columns:1fr}}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
-  .panel h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:18px 0 10px}
-  .panel h2:first-child{margin-top:0}
-  .accounts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .account{background:var(--panel-2);border:1px solid var(--line);border-radius:12px;padding:14px}
-  .account.savings{border-left:3px solid var(--gold)}
-  .account.current{border-left:3px solid var(--accent)}
-  .account.joint{border-left:3px solid #7a5cff}
-  .acc-name{font-weight:700}.acc-meta{color:var(--muted);font-size:12px;margin:4px 0 10px}
-  .acc-balance{font-size:22px;font-weight:800}
-  .form{display:grid;gap:12px}
-  .form label{display:grid;gap:6px;font-size:13px;color:var(--muted)}
-  .form input,.form select{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:8px;font-size:15px}
-  .form .check{display:flex;flex-direction:row;align-items:center;gap:8px}
-  .primary{background:var(--accent);color:#fff;border:none;padding:12px;border-radius:8px;font-weight:700;font-size:15px;cursor:pointer}
-  .primary:disabled{opacity:.5;cursor:not-allowed}
-  .audit{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;max-height:78vh;overflow:auto}
-  .audit-head{display:flex;justify-content:space-between;align-items:center}
-  .audit-head h3{margin:0;font-size:15px}
-  .integrity{font-size:12px;padding:4px 8px;border-radius:20px}
-  .integrity.ok{background:rgba(47,170,106,.15);color:var(--ok)}
-  .integrity.bad{background:rgba(226,73,59,.15);color:var(--danger)}
-  .audit ol{list-style:none;padding:0;margin:14px 0 0}
-  .audit li{padding:10px 0;border-bottom:1px solid var(--line)}
-  .audit .row{display:flex;justify-content:space-between;gap:10px}
-  .audit .actor{color:var(--muted);font-size:13px}
-  .audit .action{font-weight:600;font-size:13px}
-  .audit .hash{color:#5e6c8c;font-size:11px}
-  .overlay{position:fixed;inset:0;background:rgba(4,7,14,.7);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:50;padding:20px}
-  .intervention{width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:16px;padding:24px;box-shadow:0 30px 80px rgba(0,0,0,.6)}
-  .intervention.held{border-top-color:var(--danger)}
-  .intervention header{display:flex;gap:14px;align-items:flex-start}
-  .intervention .shield{font-size:30px}
-  .intervention h2{margin:0;font-size:19px}
-  .intervention .sub{color:var(--muted);font-size:13px;margin:6px 0 0}
-  .why{margin:16px 0;font-size:13px;color:var(--muted)}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;background:var(--brand);color:#fff}
+  .logo{font-weight:800;letter-spacing:1px;font-size:20px}
+  .user{display:flex;align-items:center;gap:10px;font-size:14px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:#fff;color:var(--brand);display:grid;place-items:center;font-weight:800}
+  .wrap{max-width:1080px;margin:0 auto;padding:22px}
+  .hello{font-size:22px;font-weight:700;margin:4px 0 2px}
+  .hello-sub{color:var(--muted);margin-bottom:18px}
+  .cols{display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+  @media(max-width:880px){.cols{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 1px 2px rgba(20,40,90,.04)}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 14px}
+  .acct{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .acct:last-child{border-bottom:none}
+  .acct .nm{font-weight:700}.acct .meta{color:var(--muted);font-size:12px}
+  .acct .bal{font-size:20px;font-weight:800}
+  .tx{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .tx:last-child{border-bottom:none}
+  .tx .d{color:var(--muted);font-size:12px}
+  .tx .amt.pos{color:var(--ok);font-weight:700}
+  .tx .amt.neg{font-weight:700}
+  label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}
+  input,select{width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);padding:11px 12px;border-radius:9px;font-size:15px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .checkrow{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:14px;color:var(--ink)}
+  .checkrow input{width:auto}
+  .btn{width:100%;margin-top:16px;background:var(--brand);color:#fff;border:none;padding:13px;border-radius:9px;font-weight:700;font-size:15px;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.sec{background:#eef2fb;color:var(--brand);margin-top:8px}
+  .addpayee{border:1px dashed var(--line);border-radius:10px;padding:12px;margin-top:8px;background:#fafbfe}
+  .toast{background:#e7f7ee;border:1px solid #b9e6cd;color:#15703f;padding:12px 14px;border-radius:10px;margin-bottom:14px;font-size:14px}
+  .hint{background:#eef2fb;border:1px solid #d4def8;color:#2d4787;padding:12px 14px;border-radius:10px;font-size:13px;margin-bottom:18px}
+  .hint b{color:#16389c}
+  details.seclog{margin-top:4px}
+  details.seclog summary{cursor:pointer;color:var(--muted);font-size:13px}
+  .log{list-style:none;padding:0;margin:12px 0 0}
+  .log li{padding:8px 0;border-bottom:1px solid var(--line);font-size:12px;display:flex;justify-content:space-between;gap:8px}
+  .log .who{color:var(--muted)}
+  .log .hash{color:#aab3c2;font-size:11px}
+  .integrity{font-size:12px;color:var(--ok)}
+  /* protection modal */
+  .overlay{position:fixed;inset:0;background:rgba(15,25,50,.55);display:grid;place-items:center;padding:20px;z-index:50}
+  .modal{width:min(540px,100%);background:#fff;border-radius:16px;padding:24px;border-top:5px solid var(--gold);box-shadow:0 30px 80px rgba(10,20,50,.35)}
+  .modal.held{border-top-color:var(--danger)}
+  .modal h2{margin:0;font-size:20px}
+  .modal .sub{color:var(--muted);font-size:14px;margin:6px 0 14px}
+  .why{font-size:13px;color:var(--muted);margin:0 0 14px}
   .why summary{cursor:pointer}.why ul{margin:8px 0 0;padding-left:18px}
-  .qtext{font-size:16px;font-weight:600;margin:8px 0 14px}
-  .options{display:grid;gap:10px}
-  .options button,.freetext button{text-align:left;background:var(--panel-2);border:1px solid var(--line);color:var(--ink);padding:12px 14px;border-radius:10px;cursor:pointer;font-size:14px}
-  .options button:hover{border-color:var(--accent)}
-  .freetext{display:grid;gap:10px}
-  .freetext textarea{background:var(--panel-2);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:12px;font-size:14px;resize:vertical}
-  .freetext button{text-align:center;background:var(--accent);border:none;color:#fff;font-weight:700}
+  .q{font-size:16px;font-weight:700;margin:6px 0 14px}
+  .opts{display:grid;gap:9px}
+  .opts button{text-align:left;background:#f6f8fc;border:1px solid var(--line);padding:12px 14px;border-radius:10px;cursor:pointer;font-size:14px}
+  .opts button:hover{border-color:var(--brand)}
+  textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:12px;font-size:14px;resize:vertical}
   .decision h3{margin:0 0 8px}
-  .decision .rationale{font-size:12px;color:var(--muted);background:var(--panel-2);padding:10px;border-radius:8px}
-  .decision .actions{display:grid;gap:10px;margin:14px 0 8px}
-  .decision .danger{background:var(--danger);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer}
-  .decision .ghost{background:transparent;border:1px solid var(--line);color:var(--muted);padding:10px;border-radius:10px;cursor:pointer}
-  .decision .agency{font-size:12px;color:var(--gold);text-align:center}
-  .scoremeter{margin-top:18px;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--muted)}
-  .scoremeter .bar{flex:1;height:8px;background:var(--panel-2);border-radius:6px;overflow:hidden}
-  .scoremeter .fill{height:100%;background:linear-gradient(90deg,var(--ok),var(--gold),var(--danger));transition:width .4s ease}
-  .banner{background:#0e1422;color:var(--muted);font-size:12px;text-align:center;padding:6px;border-bottom:1px solid var(--line)}
+  .decision .rat{font-size:12px;color:var(--muted);background:#f6f8fc;padding:10px;border-radius:8px}
+  .acts{display:grid;gap:9px;margin-top:14px}
+  .acts .danger{background:var(--danger);color:#fff;border:none;padding:12px;border-radius:10px;font-weight:700;cursor:pointer}
+  .acts .ghost{background:#fff;border:1px solid var(--line);color:var(--muted);padding:11px;border-radius:10px;cursor:pointer}
+  .meter{margin-top:16px;display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+  .meter .bar{flex:1;height:7px;background:#eef1f6;border-radius:6px;overflow:hidden}
+  .meter .fill{height:100%;background:linear-gradient(90deg,var(--ok),var(--gold),var(--danger))}
 </style>
 </head>
 <body>
-<div class="banner">Standalone demo — runs entirely in your browser. No server, no install. Same logic as the full Vault build.</div>
-<div id="app"></div>
+<div class="topbar"><span class="logo">🛡️ Vault</span><span class="user"><span>Alex Morgan</span><span class="avatar">AM</span></span></div>
+<div class="wrap"><div id="app"></div></div>
 
 <script>
 "use strict";
-/* ---------------- pure-JS SHA-256 (works on file://, no Web Crypto needed) -------------- */
-function sha256(ascii){
-  function rightRotate(v,a){return (v>>>a)|(v<<(32-a))}
-  var mathPow=Math.pow,maxWord=mathPow(2,32),result="";
-  var words=[],asciiBitLength=ascii.length*8;
-  var hash=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],primeCounter=k.length;
-  var isComposite={};
-  for(var candidate=2;primeCounter<64;candidate++){
-    if(!isComposite[candidate]){
-      for(var i=0;i<313;i+=candidate)isComposite[i]=candidate;
-      hash[primeCounter]=(mathPow(candidate,.5)*maxWord)|0;
-      k[primeCounter++]=(mathPow(candidate,1/3)*maxWord)|0;
-    }
-  }
-  ascii+="\x80";
-  while(ascii.length%64-56)ascii+="\x00";
-  for(i=0;i<ascii.length;i++){
-    var j=ascii.charCodeAt(i);
-    if(j>>8)return; // ascii only (we JSON.stringify, which escapes non-ascii)
-    words[i>>2]|=j<<((3-i)%4)*8;
-  }
-  words[words.length]=(asciiBitLength/maxWord)|0;
-  words[words.length]=asciiBitLength;
-  for(j=0;j<words.length;){
-    var w=words.slice(j,j+=16),oldHash=hash;
-    hash=hash.slice(0,8);
-    for(i=0;i<64;i++){
-      var w15=w[i-15],w2=w[i-2];
-      var a=hash[0],e=hash[4];
-      var temp1=hash[7]
-        +(rightRotate(e,6)^rightRotate(e,11)^rightRotate(e,25))
-        +((e&hash[5])^((~e)&hash[6]))
-        +k[i]
-        +(w[i]=(i<16)?w[i]:(
-            w[i-16]
-            +(rightRotate(w15,7)^rightRotate(w15,18)^(w15>>>3))
-            +w[i-7]
-            +(rightRotate(w2,17)^rightRotate(w2,19)^(w2>>>10))
-          )|0);
-      var temp2=(rightRotate(a,2)^rightRotate(a,13)^rightRotate(a,22))
-        +((a&hash[1])^(a&hash[2])^(hash[1]&hash[2]));
-      hash=[(temp1+temp2)|0].concat(hash);
-      hash[4]=(hash[4]+temp1)|0;
-    }
-    for(i=0;i<8;i++)hash[i]=(hash[i]+oldHash[i])|0;
-  }
-  for(i=0;i<8;i++)for(j=3;j+1;j--){
-    var b=(hash[i]>>(j*8))&255;
-    result+=((b<16)?0:"")+b.toString(16);
-  }
-  return result;
-}
+/* pure-JS SHA-256 so the security log verifies even on file:// */
+function sha256(ascii){function r(v,a){return(v>>>a)|(v<<(32-a))}var mp=Math.pow,mw=mp(2,32),res="";var words=[],bl=ascii.length*8;var h=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={};for(var c=2;pc<64;c++){if(!ic[c]){for(var i=0;i<313;i+=c)ic[i]=c;h[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){var j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=(bl/mw)|0;words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=h;h=h.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2];var a=h[0],e=h[4];var t1=h[7]+(r(e,6)^r(e,11)^r(e,25))+((e&h[5])^((~e)&h[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0);var t2=(r(a,2)^r(a,13)^r(a,22))+((a&h[1])^(a&h[2])^(h[1]&h[2]));h=[(t1+t2)|0].concat(h);h[4]=(h[4]+t1)|0;}for(i=0;i<8;i++)h[i]=(h[i]+oh[i])|0;}for(i=0;i<8;i++)for(j=3;j+1;j--){var b=(h[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}return res;}
 
-/* ---------------- domain model (mirrors server) ---------------- */
-var HOLD_THRESHOLD=70, NEW_PAYEE_AMOUNT=50000;
-var profile={name:"Alex Morgan",tier:"Vault Premier",dailyLimitPence:1000000};
+/* ---- money + helpers ---- */
+var fmtGBP=function(p){return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(p/100)};
+var mask=function(a){return "••••"+a.slice(-4)};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
 
+/* ---- seed data ---- */
 function seedAccounts(){return[
   {id:"acc_current",name:"Current Account",sortCode:"04-29-11",accountNumber:"20583491",type:"current",balancePence:1482055},
   {id:"acc_savings",name:"Savings",sortCode:"04-29-11",accountNumber:"44128806",type:"savings",balancePence:4210000},
   {id:"acc_joint",name:"Joint Account",sortCode:"04-29-11",accountNumber:"77451175",type:"joint",balancePence:326510},
 ];}
 function seedPayees(){return[
-  {id:"payee_landlord",name:"Jane Foster (Landlord)",sortCode:"20-00-00",accountNumber:"31114520",isNew:false},
+  {id:"payee_landlord",name:"Jane Foster (Rent)",sortCode:"20-00-00",accountNumber:"31114520",isNew:false},
   {id:"payee_water",name:"Thames Water",sortCode:"60-80-09",accountNumber:"70114488",isNew:false},
   {id:"payee_gas",name:"British Gas",sortCode:"40-05-30",accountNumber:"55012390",isNew:false},
 ];}
+function seedTx(){return[
+  {acct:"acc_current",date:"31 May",desc:"Salary — Acme Corp",amt:320000},
+  {acct:"acc_current",date:"31 May",desc:"Tesco Stores",amt:-5420},
+  {acct:"acc_current",date:"30 May",desc:"TfL Travel",amt:-1250},
+  {acct:"acc_current",date:"28 May",desc:"Jane Foster (Rent)",amt:-145000},
+  {acct:"acc_savings",date:"25 May",desc:"Transfer from Current",amt:50000},
+  {acct:"acc_joint",date:"28 May",desc:"Sainsbury's",amt:-8840},
+];}
 
-var SCAM_PATTERNS={
-  impersonation_safe_account:{label:"Bank/police impersonation — 'safe account'"},
-  investment:{label:"Investment / crypto scam"},
-  purchase:{label:"Purchase scam"},
-  romance:{label:"Romance scam"},
-  invoice_ceo:{label:"Invoice / CEO fraud"},
-};
-var SIGNAL_LEXICON=[
-  {phrase:/safe account/i,pattern:"impersonation_safe_account",weight:45},
-  {phrase:/\bbank\b.*(told|asked|said|called)/i,pattern:"impersonation_safe_account",weight:30},
-  {phrase:/(fraud team|security team|police|hmrc|tax)/i,pattern:"impersonation_safe_account",weight:25},
-  {phrase:/(protect|move).*(money|funds|savings)/i,pattern:"impersonation_safe_account",weight:20},
-  {phrase:/(invest|crypto|bitcoin|trading|returns?)/i,pattern:"investment",weight:30},
-  {phrase:/(don'?t tell|keep.*(secret|private)|not mention)/i,pattern:"impersonation_safe_account",weight:35},
-  {phrase:/(urgent|immediately|right now|act fast|deadline)/i,pattern:"impersonation_safe_account",weight:15},
-  {phrase:/(met (him|her|them) online|dating|never met)/i,pattern:"romance",weight:30},
-  {phrase:/(marketplace|facebook|ebay|gumtree|listing)/i,pattern:"purchase",weight:15},
-  {phrase:/(invoice|supplier|new bank details|changed.*details)/i,pattern:"invoice_ceo",weight:25},
+/* ---- fraud-protection engine (only fires on risky payments) ---- */
+var HOLD=70;
+var PATTERNS={impersonation:"Bank/police impersonation — 'safe account'",investment:"Investment / crypto scam",purchase:"Purchase scam",romance:"Romance scam",invoice:"Invoice / mandate fraud"};
+var LEX=[
+  {re:/safe account/i,p:"impersonation",w:45},{re:/\bbank\b.*(told|asked|said|called)/i,p:"impersonation",w:30},
+  {re:/(fraud team|security team|police|hmrc|tax)/i,p:"impersonation",w:25},{re:/(protect|move).*(money|funds|savings)/i,p:"impersonation",w:20},
+  {re:/(invest|crypto|bitcoin|trading|returns?)/i,p:"investment",w:30},{re:/(don'?t tell|keep.*(secret|private)|not mention)/i,p:"impersonation",w:35},
+  {re:/(urgent|immediately|right now|act fast|deadline)/i,p:"impersonation",w:15},{re:/(met (him|her|them) online|dating|never met)/i,p:"romance",w:30},
+  {re:/(marketplace|facebook|ebay|gumtree|listing)/i,p:"purchase",w:15},{re:/(invoice|supplier|new bank details|changed.*details)/i,p:"invoice",w:25},
 ];
-var CHOICE_WEIGHTS={
-  contacted_yes:{weight:20,pattern:"impersonation_safe_account"},
-  who_bank_police:{weight:35,pattern:"impersonation_safe_account"},
-  who_investment:{weight:30,pattern:"investment"},
-  who_online:{weight:25,pattern:"romance"},
-  who_seller:{weight:10,pattern:"purchase"},
-  who_boss:{weight:20,pattern:"invoice_ceo"},
-  safe_account_yes:{weight:40,pattern:"impersonation_safe_account"},
-};
-function analyze(input){
-  var signals=[],delta=0;
-  if(input.choice&&CHOICE_WEIGHTS[input.choice]){
-    var c=CHOICE_WEIGHTS[input.choice];
-    signals.push({label:SCAM_PATTERNS[c.pattern].label,weight:c.weight});delta+=c.weight;
-  }
-  if(input.freeText){
-    SIGNAL_LEXICON.forEach(function(s){
-      if(s.phrase.test(input.freeText)){signals.push({label:SCAM_PATTERNS[s.pattern].label,weight:s.weight});delta+=s.weight;}
-    });
-  }
-  var rationale=signals.length?("Detected "+signals.length+" scam signal(s): "+signals.map(function(s){return s.label}).join("; ")+"."):"No scam signals detected in this answer.";
-  return {delta:delta,signals:signals,rationale:rationale};
-}
-var QUESTION_FLOW=[
-  {id:"contacted",text:"Before we move this money — did someone recently contact you and tell you to make this payment, or help you set it up?",type:"choice",options:[{value:"contacted_yes",label:"Yes, someone contacted me"},{value:"contacted_no",label:"No, this was entirely my idea"}]},
-  {id:"who",text:"Who did they say they were?",type:"choice",options:[{value:"who_bank_police",label:"My bank, the police, or HMRC"},{value:"who_investment",label:"An investment or crypto company"},{value:"who_online",label:"Someone I met online"},{value:"who_seller",label:"A seller or marketplace"},{value:"who_boss",label:"My employer or a supplier"}]},
-  {id:"safe_account",text:"Were you told this is a 'safe account', or that moving the money will protect it?",type:"yesno",options:[{value:"safe_account_yes",label:"Yes"},{value:"safe_account_no",label:"No"}]},
-  {id:"detail",text:"In your own words, what did they tell you? (This helps us protect you.)",type:"freetext"},
+var CHOICE={contacted_yes:20,who_bank_police:35,who_investment:30,who_online:25,who_seller:10,who_boss:20,safe_account_yes:40};
+function analyze(input){var sig=[],d=0;if(input.choice&&CHOICE[input.choice]!=null){d+=CHOICE[input.choice];sig.push(input.choice);}if(input.freeText){LEX.forEach(function(s){if(s.re.test(input.freeText)){d+=s.w;sig.push(PATTERNS[s.p]);}});}return{delta:d,signals:sig};}
+var FLOW=[
+  {id:"contacted",text:"Quick check before we send this. Did someone contact you and ask you to make this payment?",type:"choice",options:[{v:"contacted_yes",l:"Yes, someone contacted me"},{v:"contacted_no",l:"No, this was my own idea"}]},
+  {id:"who",text:"Who did they say they were?",type:"choice",options:[{v:"who_bank_police",l:"My bank, the police, or HMRC"},{v:"who_investment",l:"An investment or crypto company"},{v:"who_online",l:"Someone I met online"},{v:"who_seller",l:"A seller or marketplace"},{v:"who_boss",l:"My employer or a supplier"}]},
+  {id:"safe",text:"Were you told to move money to a 'safe account', or that this will protect your money?",type:"choice",options:[{v:"safe_account_yes",l:"Yes"},{v:"safe_account_no",l:"No"}]},
+  {id:"detail",text:"In your own words, what were you told? (This helps us protect you.)",type:"free"},
 ];
+function assess(pay,acct,pe){var reasons=[],s=0;
+  if(pe.isNew){s+=30;reasons.push("First time paying this new payee");}
+  if(pay.amt>=50000){s+=20;reasons.push("Large amount (£500 or more)");}
+  if(pay.urgent){s+=20;reasons.push("Marked as urgent");}
+  if(pay.amt>acct.balancePence*0.5){s+=15;reasons.push("More than half your balance");}
+  if(/safe|secure|protect/i.test(pe.name)){s+=25;reasons.push("Payee name looks like a 'safe account' lure");}
+  return{intervene:s>=40,score:s,reasons:reasons};}
 
-function assessPayment(payment,account,payee){
-  var reasons=[],score=0;
-  if(payee.isNew){score+=30;reasons.push("First payment to a brand-new payee");}
-  if(payment.amountPence>=NEW_PAYEE_AMOUNT){score+=20;reasons.push("Large amount (≥ £500)");}
-  if(payment.markedUrgent){score+=20;reasons.push("Customer marked the payment urgent");}
-  if(payment.amountPence>account.balancePence*0.5){score+=15;reasons.push("Payment is more than half the account balance");}
-  if(/safe|secure|protect|hold/i.test(payee.name)){score+=25;reasons.push("Payee name resembles a 'safe account' lure");}
-  return {intervene:score>=40,score:score,reasons:reasons};
-}
+/* ---- hash-chained security log ---- */
+function Log(){this.c=[];}
+Log.prototype.add=function(who,what,det){var prev=this.c.length?this.c[this.c.length-1].hash:"0".repeat(64);var b={seq:this.c.length+1,t:new Date().toISOString(),who:who,what:what,det:det||{},prev:prev};b.hash=sha256(JSON.stringify(b));this.c.push(b);return b;};
+Log.prototype.verify=function(){var prev="0".repeat(64);for(var i=0;i<this.c.length;i++){var e=this.c[i];var ex=sha256(JSON.stringify({seq:e.seq,t:e.t,who:e.who,what:e.what,det:e.det,prev:e.prev}));if(e.prev!==prev||e.hash!==ex)return false;prev=e.hash;}return true;};
 
-/* ---------------- hash-chained audit log ---------------- */
-var GENESIS="0".repeat(64);
-function Audit(){this.chain=[];}
-Audit.prototype.record=function(actor,action,details){
-  var prevHash=this.chain.length?this.chain[this.chain.length-1].hash:GENESIS;
-  var base={seq:this.chain.length+1,timestamp:new Date().toISOString(),actor:actor,action:action,details:details||{},prevHash:prevHash};
-  base.hash=sha256(JSON.stringify({seq:base.seq,timestamp:base.timestamp,actor:base.actor,action:base.action,details:base.details,prevHash:base.prevHash}));
-  this.chain.push(base);return base;
-};
-Audit.prototype.verify=function(){
-  var prev=GENESIS;
-  for(var i=0;i<this.chain.length;i++){var e=this.chain[i];
-    var expect=sha256(JSON.stringify({seq:e.seq,timestamp:e.timestamp,actor:e.actor,action:e.action,details:e.details,prevHash:e.prevHash}));
-    if(e.prevHash!==prev||e.hash!==expect)return{valid:false,brokenAt:e.seq};prev=e.hash;}
-  return{valid:true};
-};
+/* ---- state ---- */
+var S={accounts:seedAccounts(),payees:seedPayees(),tx:seedTx(),log:new Log(),
+  form:{from:"acc_current",payee:"",amount:"",ref:"",urgent:false},
+  adding:false,newp:{name:"",sort:"",num:""},toast:"",active:null};
+S.log.add("system","Signed in",{user:"Alex Morgan"});
+function acct(id){return S.accounts.filter(function(a){return a.id===id})[0]}
+function payee(id){return S.payees.filter(function(p){return p.id===id})[0]}
 
-/* ---------------- app state ---------------- */
-var state={accounts:seedAccounts(),payees:seedPayees(),audit:new Audit(),
-  form:{fromAccountId:"acc_current",payeeId:"",amount:"8000",reference:"",markedUrgent:false},
-  active:null /* intervention session */};
-state.audit.record("system","service.started",{service:"vault-standalone"});
+/* ---- actions ---- */
+function setF(k,v){S.form[k]=v;}
+function toggleAdd(){S.adding=!S.adding;render();}
+function saveNewPayee(){var n=S.newp;if(!n.name||!n.sort||!n.num){alert("Please fill in the payee name, sort code and account number.");return;}
+  var p={id:"payee_"+Date.now(),name:n.name,sortCode:n.sort,accountNumber:n.num,isNew:true};
+  S.payees.push(p);S.log.add("customer","Added new payee",{name:p.name});
+  S.form.payee=p.id;S.adding=false;S.newp={name:"",sort:"",num:""};render();}
+function send(){
+  var f=S.form,a=acct(f.from),pe=payee(f.payee);if(!a||!pe){alert("Choose who to pay.");return;}
+  var amt=Math.round(parseFloat(f.amount||"0")*100);if(!(amt>0)){alert("Enter an amount greater than 0.");return;}
+  if(amt>a.balancePence){alert("That's more than the balance in this account.");return;}
+  var pay={id:"pay_"+Date.now(),from:f.from,payee:pe.id,amt:amt,ref:f.ref,urgent:f.urgent};
+  S.log.add("customer","Payment started",{to:pe.name,amount:fmtGBP(amt)});
+  var t=assess(pay,a,pe);S.log.add("rules-engine","Risk check",{score:t.score,needsReview:t.intervene});
+  if(t.intervene){S.log.add("vault-protect","Protection opened",{to:pe.name});S.active={pay:pay,pe:pe,trigger:t,step:0,score:0,q:FLOW[0],decision:null,free:""};render();}
+  else{completePayment(pay,pe);S.toast="✓ "+fmtGBP(amt)+" sent to "+pe.name+".";render();}
+}
+function completePayment(pay,pe){acct(pay.from).balancePence-=pay.amt;S.tx.unshift({acct:pay.from,date:"Today",desc:pe.name+(pay.ref?" — "+pay.ref:""),amt:-pay.amt});S.log.add("rules-engine","Payment sent",{to:pe.name,amount:fmtGBP(pay.amt)});S.form={from:S.form.from,payee:"",amount:"",ref:"",urgent:false};}
+function answer(input){var s=S.active;if(!s||s.decision)return;var cur=FLOW[s.step];var r=analyze(input);s.score+=r.delta;S.log.add("vault-protect","Answer reviewed",{question:cur.id,added:r.delta,total:s.score});
+  if(cur.id==="contacted"&&input.choice==="contacted_no")return finish();
+  s.step++;if(s.step>=FLOW.length)return finish();s.q=FLOW[s.step];s.free="";render();}
+function finish(){var s=S.active;var hold=s.score>=HOLD;
+  s.decision={hold:hold,rat:hold?("Risk score "+s.score+" — held for review. We never auto-decline; you stay in control."):("Risk score "+s.score+" — no scam pattern found, payment sent.")};
+  S.log.add("vault-protect",hold?"Payment HELD":"Payment released",{score:s.score});
+  if(!hold){completePayment(s.pay,s.pe);}render();}
+function resolve(act){var s=S.active;if(act==="release"){completePayment(s.pay,s.pe);S.toast="✓ "+fmtGBP(s.pay.amt)+" sent to "+s.pe.name+".";S.log.add("customer","Released after warning",{});}
+  else{S.toast="Payment cancelled. Your money is safe.";S.log.add("customer","Cancelled — scam avoided",{});S.form={from:S.form.from,payee:"",amount:"",ref:"",urgent:false};}
+  S.active=null;render();}
+function closeClear(){S.active=null;render();}
 
-var fmtGBP=function(p){return new Intl.NumberFormat("en-GB",{style:"currency",currency:"GBP"}).format(p/100)};
-var mask=function(a){return "••••"+a.slice(-4)};
-function acc(id){return state.accounts.filter(function(a){return a.id===id})[0]}
-function payee(id){return state.payees.filter(function(p){return p.id===id})[0]}
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
-
-/* ---------------- actions ---------------- */
-function resetDemo(){state.accounts=seedAccounts();state.payees=seedPayees();state.audit.record("ops-review","demo.reset",{});}
-function loadBeat(kind){
-  resetDemo();
-  var p=kind==="car"
-    ?{id:"payee_"+Date.now(),name:"Prestige Motors Ltd",sortCode:"30-16-22",accountNumber:"44102291",isNew:true}
-    :{id:"payee_"+Date.now(),name:"Safe Account (Fraud Team)",sortCode:"60-12-99",accountNumber:"78451200",isNew:true};
-  state.payees.push(p);state.audit.record("customer","payee.added",{payeeId:p.id,name:p.name});
-  state.form={fromAccountId:"acc_current",payeeId:p.id,amount:"8000",reference:kind==="car"?"Used car — balance":"Account protection",markedUrgent:kind!=="car"};
-  render();
-}
-function startPayment(){
-  var f=state.form,account=acc(f.fromAccountId),pe=payee(f.payeeId);
-  if(!account||!pe)return;
-  var amountPence=Math.round(parseFloat(f.amount||"0")*100);
-  if(!(amountPence>0))return;
-  var payment={id:"pay_"+Date.now(),fromAccountId:f.fromAccountId,payeeId:f.payeeId,amountPence:amountPence,reference:f.reference,markedUrgent:f.markedUrgent,status:"cleared"};
-  state.audit.record("customer","payment.initiated",{paymentId:payment.id,payeeId:pe.id,amountPence:amountPence,markedUrgent:payment.markedUrgent});
-  var trig=assessPayment(payment,account,pe);
-  state.audit.record("rules-engine","payment.assessed",{paymentId:payment.id,triggerScore:trig.score,intervene:trig.intervene,reasons:trig.reasons});
-  if(trig.intervene){
-    state.audit.record("ai-analyst","intervention.opened",{paymentId:payment.id});
-    state.active={payment:payment,trigger:trig,step:0,scamScore:0,question:QUESTION_FLOW[0],decision:null,freeText:""};
-  }else{
-    account.balancePence-=amountPence;state.audit.record("rules-engine","payment.cleared",{paymentId:payment.id});
-  }
-  render();
-}
-function answer(input){
-  var s=state.active;if(!s||s.decision)return;
-  var current=QUESTION_FLOW[s.step];
-  var a=analyze(input);s.scamScore+=a.delta;
-  state.audit.record("ai-analyst","intervention.answer_analysed",{question:current.id,answer:input,delta:a.delta,runningScore:s.scamScore,signals:a.signals,rationale:a.rationale});
-  if(current.id==="contacted"&&input.choice==="contacted_no"){return finish();}
-  s.step+=1;
-  if(s.step>=QUESTION_FLOW.length){return finish();}
-  s.question=QUESTION_FLOW[s.step];s.freeText="";render();
-}
-function finish(){
-  var s=state.active;
-  var outcome=s.scamScore>=HOLD_THRESHOLD?"hold":"release";
-  var rationale=outcome==="hold"
-    ?("Cumulative scam score "+s.scamScore+" ≥ "+HOLD_THRESHOLD+". Payment held and escalated to human review — deliberately NOT auto-declined.")
-    :("Cumulative scam score "+s.scamScore+" < "+HOLD_THRESHOLD+". No strong scam pattern; payment released.");
-  state.audit.record("ai-analyst","intervention.decision."+outcome,{paymentId:s.payment.id,scamScore:s.scamScore,rationale:rationale});
-  s.question=null;s.decision={outcome:outcome,rationale:rationale};
-  if(outcome==="hold"){s.payment.status="held";}
-  else{s.payment.status="cleared";acc(s.payment.fromAccountId).balancePence-=s.payment.amountPence;}
-  render();
-}
-function resolve(action){
-  var s=state.active;
-  if(action==="release"){s.payment.status="released";acc(s.payment.fromAccountId).balancePence-=s.payment.amountPence;state.audit.record("customer","payment.released_after_hold",{paymentId:s.payment.id});}
-  else{s.payment.status="cancelled";state.audit.record("customer","payment.cancelled_after_warning",{paymentId:s.payment.id});}
-  state.active=null;render();
-}
-
-/* ---------------- render ---------------- */
-var ACTOR_ICON={customer:"👤","rules-engine":"⚙️","ai-analyst":"🧠","ops-review":"🏢",system:"🔧"};
+/* ---- render ---- */
+var ICON={customer:"👤","rules-engine":"⚙️","vault-protect":"🛡️",system:"🔧"};
 function render(){
-  var f=state.form;
-  var html='<div class="topbar">'
-    +'<div class="brand"><span class="logo">🛡️ VAULT</span><span class="tagline">security is the product — not the fine print</span></div>'
-    +'<div class="who"><span class="cust">'+profile.name+'</span><span class="tier">'+profile.tier+' · '+fmtGBP(profile.dailyLimitPence)+'/day limit</span></div>'
-    +'<div class="scenarios"><button class="ghostbtn" onclick="loadBeat(\'car\')">▶ Beat 2: car (clears)</button>'
-    +'<button class="reset" onclick="loadBeat(\'scam\')">▶ Beat 3: scam (holds)</button></div></div>';
+  var f=S.form;
+  var h='<div class="hello">Good afternoon, Alex 👋</div><div class="hello-sub">Here are your accounts. To move money, use <b>Send money</b> on the right.</div>';
+  if(S.toast)h+='<div class="toast">'+esc(S.toast)+'</div>';
+  h+='<div class="hint">💡 <b>Try it:</b> Pay a saved payee like <b>Jane Foster (Rent)</b> — it goes straight through. Now try adding a <b>new payee</b> and sending a large amount (say £8,000): Vault\'s scam protection will step in. That\'s the whole point — it catches scams where <i>you</i> are tricked into sending the money.</div>';
+  h+='<div class="cols"><div>';
 
-  html+='<div class="grid"><section class="panel"><h2>Accounts</h2><div class="accounts">';
-  state.accounts.forEach(function(a){
-    html+='<div class="account '+a.type+'"><div class="acc-name">'+esc(a.name)+'</div><div class="acc-meta">'+a.sortCode+' · '+mask(a.accountNumber)+'</div><div class="acc-balance">'+fmtGBP(a.balancePence)+'</div></div>';
-  });
-  html+='</div><h2>Make a payment</h2><div class="form">';
-  html+='<label>From<select onchange="state.form.fromAccountId=this.value">'+state.accounts.map(function(a){return '<option value="'+a.id+'"'+(a.id===f.fromAccountId?' selected':'')+'>'+esc(a.name)+' — '+fmtGBP(a.balancePence)+'</option>'}).join("")+'</select></label>';
-  html+='<label>To payee<select onchange="state.form.payeeId=this.value"><option value="">Select a payee…</option>'+state.payees.map(function(p){return '<option value="'+p.id+'"'+(p.id===f.payeeId?' selected':'')+'>'+esc(p.name)+' '+(p.isNew?'(new)':'✓ trusted')+'</option>'}).join("")+'</select></label>';
-  html+='<label>Amount (£)<input value="'+esc(f.amount)+'" oninput="state.form.amount=this.value"></label>';
-  html+='<label>Reference<input value="'+esc(f.reference)+'" oninput="state.form.reference=this.value"></label>';
-  html+='<label class="check"><input type="checkbox" '+(f.markedUrgent?'checked':'')+' onchange="state.form.markedUrgent=this.checked"> Mark as urgent</label>';
-  html+='<button class="primary" '+(f.payeeId?'':'disabled')+' onclick="startPayment()">Send '+(f.amount?fmtGBP(Math.round(parseFloat(f.amount||"0")*100)):"")+'</button>';
-  html+='</div></section>';
+  // accounts
+  h+='<div class="card"><h2>Your accounts</h2>';
+  S.accounts.forEach(function(a){h+='<div class="acct"><div><div class="nm">'+esc(a.name)+'</div><div class="meta">'+a.sortCode+' · '+mask(a.accountNumber)+'</div></div><div class="bal">'+fmtGBP(a.balancePence)+'</div></div>';});
+  h+='</div>';
 
-  // audit
-  var integ=state.audit.verify();
-  html+='<aside class="audit"><div class="audit-head"><h3>Immutable audit trail</h3><span class="integrity '+(integ.valid?"ok":"bad")+'">'+(integ.valid?"🔒 chain verified":"⚠️ chain broken")+'</span></div><ol>';
-  state.audit.chain.slice().reverse().forEach(function(e){
-    html+='<li><div class="row"><span class="actor">'+(ACTOR_ICON[e.actor]||"•")+' '+e.actor+'</span><span class="action">'+e.action+'</span></div><code class="hash" title="'+e.hash+'">#'+e.seq+' · '+e.hash.slice(0,12)+'…</code></li>';
-  });
-  html+='</ol></aside></div>';
+  // transactions
+  h+='<div class="card"><h2>Recent activity</h2>';
+  S.tx.slice(0,8).forEach(function(t){var a=acct(t.acct);h+='<div class="tx"><div><div>'+esc(t.desc)+'</div><div class="d">'+t.date+' · '+(a?a.name:"")+'</div></div><div class="amt '+(t.amt>=0?"pos":"neg")+'">'+(t.amt>=0?"+":"")+fmtGBP(t.amt)+'</div></div>';});
+  h+='</div>';
 
-  // intervention overlay
-  var s=state.active;
-  if(s){
-    var held=s.decision&&s.decision.outcome==="hold";
-    html+='<div class="overlay"><div class="intervention'+(held?' held':'')+'">';
-    html+='<header><span class="shield">🛡️</span><div><h2>Hold on — let\'s check this together</h2><p class="sub">Vault paused your '+fmtGBP(s.payment.amountPence)+' payment for a moment. This takes 20 seconds and could save your money.</p></div></header>';
-    html+='<details class="why"><summary>Why we paused this ('+s.trigger.score+' pts)</summary><ul>'+s.trigger.reasons.map(function(r){return '<li>'+esc(r)+'</li>'}).join("")+'</ul></details>';
-    if(s.question){
-      html+='<p class="qtext">'+esc(s.question.text)+'</p>';
-      if(s.question.type!=="freetext"){
-        html+='<div class="options">'+s.question.options.map(function(o){return '<button onclick="answer({choice:\''+o.value+'\'})">'+esc(o.label)+'</button>'}).join("")+'</div>';
-      }else{
-        html+='<div class="freetext"><textarea id="ft" rows="3" placeholder="e.g. The bank\'s fraud team called and said my account isn\'t safe…" oninput="state.active.freeText=this.value">'+esc(s.freeText)+'</textarea><button onclick="answer({freeText:state.active.freeText})">Continue</button></div>';
-      }
+  // security log (collapsed)
+  h+='<div class="card"><details class="seclog"><summary>🔒 Security activity log '+(S.log.verify()?'<span class="integrity">· chain verified</span>':'<span style="color:var(--danger)">· broken</span>')+'</summary><ul class="log">';
+  S.log.c.slice().reverse().forEach(function(e){h+='<li><span class="who">'+(ICON[e.who]||"•")+' '+e.who+'</span><span>'+esc(e.what)+'</span><span class="hash">#'+e.seq+'</span></li>';});
+  h+='</ul></details></div>';
+  h+='</div>';
+
+  // send money
+  h+='<div><div class="card"><h2>Send money</h2>';
+  h+='<label>From account</label><select onchange="setF(\'from\',this.value)">'+S.accounts.map(function(a){return '<option value="'+a.id+'"'+(a.id===f.from?' selected':'')+'>'+esc(a.name)+' — '+fmtGBP(a.balancePence)+'</option>'}).join("")+'</select>';
+  h+='<label>Pay to</label><select onchange="setF(\'payee\',this.value)"><option value="">Choose a payee…</option>'+S.payees.map(function(p){return '<option value="'+p.id+'"'+(p.id===f.payee?' selected':'')+'>'+esc(p.name)+(p.isNew?' (new)':'')+'</option>'}).join("")+'</select>';
+  h+='<button class="btn sec" onclick="toggleAdd()">'+(S.adding?'✕ Cancel':'+ Add a new payee')+'</button>';
+  if(S.adding){h+='<div class="addpayee"><label>Payee name</label><input value="'+esc(S.newp.name)+'" oninput="S.newp.name=this.value" placeholder="e.g. John Smith"><div class="row2"><div><label>Sort code</label><input value="'+esc(S.newp.sort)+'" oninput="S.newp.sort=this.value" placeholder="00-00-00"></div><div><label>Account number</label><input value="'+esc(S.newp.num)+'" oninput="S.newp.num=this.value" placeholder="12345678"></div></div><button class="btn" style="margin-top:12px" onclick="saveNewPayee()">Save payee</button></div>';}
+  h+='<div class="row2"><div><label>Amount (£)</label><input value="'+esc(f.amount)+'" oninput="setF(\'amount\',this.value)" placeholder="0.00" inputmode="decimal"></div><div><label>Reference</label><input value="'+esc(f.ref)+'" oninput="setF(\'ref\',this.value)" placeholder="What\'s it for?"></div></div>';
+  h+='<div class="checkrow"><input type="checkbox" id="urg" '+(f.urgent?'checked':'')+' onchange="setF(\'urgent\',this.checked)"><label for="urg" style="margin:0">Mark as urgent</label></div>';
+  h+='<button class="btn" '+(f.payee?'':'disabled')+' onclick="send()">Send'+(f.amount?' '+fmtGBP(Math.round(parseFloat(f.amount||"0")*100)):'')+'</button>';
+  h+='</div></div></div>';
+
+  // protection modal
+  var s=S.active;
+  if(s){var hold=s.decision&&s.decision.hold;
+    h+='<div class="overlay"><div class="modal'+(hold?' held':'')+'"><h2>🛡️ Hold on — let\'s check this together</h2><p class="sub">We\'ve paused your '+fmtGBP(s.pay.amt)+' payment to '+esc(s.pe.name)+' for a moment. This takes 20 seconds and could save your money.</p>';
+    h+='<details class="why"><summary>Why we paused this</summary><ul>'+s.trigger.reasons.map(function(r){return '<li>'+esc(r)+'</li>'}).join("")+'</ul></details>';
+    if(s.q){h+='<div class="q">'+esc(s.q.text)+'</div>';
+      if(s.q.type!=="free"){h+='<div class="opts">'+s.q.options.map(function(o){return '<button onclick="answer({choice:\''+o.v+'\'})">'+esc(o.l)+'</button>'}).join("")+'</div>';}
+      else{h+='<textarea rows="3" placeholder="e.g. Someone from the bank said my account isn\'t safe and I must move the money now…" oninput="S.active.free=this.value">'+esc(s.free)+'</textarea><button class="btn" onclick="answer({freeText:S.active.free})">Continue</button>';}
     }
     if(s.decision){
-      if(held){
-        html+='<div class="decision hold"><h3>🚫 We\'ve held this payment</h3><p>Your answers match a known scam pattern. <strong>No money has left your account.</strong> A real bank fraud team would never ask you to move money to a "safe account." We\'ve flagged this for human review.</p><p class="rationale">'+esc(s.decision.rationale)+'</p><div class="actions"><button class="danger" onclick="resolve(\'cancel\')">Cancel this payment — it was a scam</button><button class="ghost" onclick="resolve(\'release\')">I\'m certain it\'s safe — release it</button></div><p class="agency">You stay in control. We hold and explain; we never block outright.</p></div>';
-      }else{
-        html+='<div class="decision"><h3>✅ All clear</h3><p>Thanks — nothing about this looks like a scam. Your payment is on its way.</p><p class="rationale">'+esc(s.decision.rationale)+'</p><button class="primary" onclick="state.active=null;render()">Done</button></div>';
-      }
+      if(hold){h+='<div class="decision"><h3 style="color:var(--danger)">🚫 We\'ve held this payment</h3><p>Your answers match a known scam. <b>No money has left your account.</b> A real bank would never ask you to move money to a "safe account."</p><p class="rat">'+esc(s.decision.rat)+'</p><div class="acts"><button class="danger" onclick="resolve(\'cancel\')">Cancel it — this was a scam</button><button class="ghost" onclick="resolve(\'release\')">I\'m sure it\'s safe — send anyway</button></div></div>';}
+      else{h+='<div class="decision"><h3 style="color:var(--ok)">✅ All clear</h3><p>Nothing here looks like a scam — your payment has been sent.</p><p class="rat">'+esc(s.decision.rat)+'</p><button class="btn" onclick="closeClear()">Done</button></div>';}
     }
-    html+='<footer class="scoremeter"><div class="bar"><div class="fill" style="width:'+Math.min(s.scamScore,100)+'%"></div></div><span>scam-likelihood '+s.scamScore+'/100</span></footer>';
-    html+='</div></div>';
+    h+='<div class="meter"><div class="bar"><div class="fill" style="width:'+Math.min(s.score,100)+'%"></div></div><span>scam-likelihood '+s.score+'/100</span></div>';
+    h+='</div></div>';
   }
-
-  document.getElementById("app").innerHTML=html;
+  document.getElementById("app").innerHTML=h;
 }
 render();
 </script>
