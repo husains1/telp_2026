@@ -99,7 +99,32 @@
     .brandbar{padding-top:calc(14px + env(safe-area-inset-top))}
     .nav{padding-top:calc(10px + env(safe-area-inset-top))}
     .tabbar{padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+    #soc{display:none}
   }
+  .stage{display:flex;gap:24px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+  #soc{width:368px;background:#0b1322;border:1px solid #22304d;border-radius:18px;color:#cdd6f4;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+  #soc h3{margin:0 0 2px;font-size:15px;color:#fff}
+  #soc .internal{float:right;font-size:9px;background:#2a1214;color:#f87171;padding:3px 7px;border-radius:5px;letter-spacing:.5px;font-weight:800}
+  #soc .sublabel{font-size:11px;color:#7f8db0;margin-bottom:14px}
+  #soc .posture{padding:11px 13px;border-radius:11px;margin-bottom:14px;font-weight:800;font-size:13px;letter-spacing:.3px}
+  #soc .posture.NORMAL{background:#10241b;color:#36d399;border:1px solid #1c3a2b}
+  #soc .posture.HEIGHTENED{background:#2a2310;color:#fbbf24;border:1px solid #4a3c12}
+  #soc .posture.LOCKDOWN{background:#2a1214;color:#f87171;border:1px solid #4a1c20}
+  #soc .vec{border:1px solid #22304d;border-radius:12px;padding:11px 12px;margin-bottom:10px;background:#0e1726}
+  #soc .vec.on{border-color:#5b2330;background:#160f15}
+  #soc .vid{font-size:10px;color:#6b7aa0;font-family:ui-monospace,Menlo,monospace}
+  #soc .vname{font-size:13px;font-weight:700;color:#e8eaf0;margin:3px 0 4px}
+  #soc .sev{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px}
+  #soc .sev.HIGH{background:#3a2a10;color:#fbbf24}
+  #soc .sev.CRITICAL{background:#3a1214;color:#f87171}
+  #soc .trend{font-size:11px;color:#9aa3b8}
+  #soc .vec button{width:100%;margin-top:9px;border:none;border-radius:9px;padding:9px;font-weight:700;font-size:12px;cursor:pointer}
+  #soc .arm{background:#1f6feb;color:#fff}
+  #soc .live{background:#2a1214;color:#f87171;border:1px solid #5b2330}
+  .pbadge{margin-left:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;align-self:center}
+  .pbadge.HEIGHTENED{background:#fde68a;color:#7c2d12}
+  .pbadge.LOCKDOWN{background:#fecaca;color:#7f1d1d}
+  @media(max-width:820px){#soc{width:100%;max-width:368px}}
 </style>
 </head>
 <body>
@@ -107,13 +132,16 @@
     <h1>Vault — Online Banking</h1>
     <p>A working banking app. Pay a saved payee and it goes straight through. Send a large amount to a <b>new</b> payee and Vault's scam protection steps in — reading your answers in real time, not from a script.</p>
   </div>
-  <div class="phone"><div class="screen">
-    <div class="notch"></div>
-    <div class="status"><span>9:41</span><span>5G ▪ 100%</span></div>
-    <div id="app"></div>
-    <div class="home"></div>
-  </div></div>
-  <div class="note">Runs entirely in your browser — no server, no install. Real risk engine + real SHA-256 hash-chained audit (verify it in the Activity tab).</div>
+  <div class="stage">
+    <div class="phone"><div class="screen">
+      <div class="notch"></div>
+      <div class="status"><span>9:41</span><span>5G ▪ 100%</span></div>
+      <div id="app"></div>
+      <div class="home"></div>
+    </div></div>
+    <div id="soc"></div>
+  </div>
+  <div class="note">Two surfaces: the customer phone (left) and the analyst-only Security Operations console (right). Activate a threat on the right → the bank re-screens matching payments on the left, live. Runs entirely in your browser — real risk engine + real SHA-256 audit.</div>
 
 <script>
 "use strict";
@@ -143,7 +171,27 @@ function SEED(){return{
     {acct:'sav',desc:'Transfer from Current',date:'25 May',amt:50000},
     {acct:'joint',desc:"Sainsbury's",date:'24 May',amt:-8840},
   ],
+  threats:[
+    {id:'TIV-2026-031',name:'Thames Water billing-scam surge',cat:'impersonation / APP',sev:'HIGH',trend:'+280% this week',targetPayee:'Thames Water',posture:'HEIGHTENED',active:false},
+    {id:'TIV-2026-014',name:'“Safe account” bank-impersonation surge',cat:'impersonation / APP',sev:'HIGH',trend:'+340% this week',targetPayee:null,posture:'HEIGHTENED',active:false},
+    {id:'TIV-2026-008',name:'AI voice-clone impersonation',cat:'impersonation',sev:'HIGH',trend:'on the rise',targetPayee:null,posture:'HEIGHTENED',active:false},
+    {id:'TIV-2026-021',name:'SIM-swap + credential-stuffing ATO',cat:'account takeover',sev:'CRITICAL',trend:'active campaign',targetPayee:null,posture:'LOCKDOWN',active:false},
+  ],
 };}
+
+/* ---- threat-intelligence feed + defense posture ---- */
+var POSTURE_RANK={NORMAL:0,HEIGHTENED:1,LOCKDOWN:2};
+function activeThreats(){return S.threats.filter(function(t){return t.active});}
+function posture(){var best='NORMAL';activeThreats().forEach(function(t){if(POSTURE_RANK[t.posture]>POSTURE_RANK[best])best=t.posture;});return best;}
+function advisoriesTargeting(name){var n=(name||'').toLowerCase();return activeThreats().filter(function(t){return t.targetPayee&&n.indexOf(t.targetPayee.toLowerCase())>=0;});}
+function holdThreshold(){var p=posture();return p==='LOCKDOWN'?45:p==='HEIGHTENED'?55:70;}
+function activateThreat(id){
+  var t=S.threats.filter(function(x){return x.id===id})[0];if(!t)return;
+  t.active=!t.active;
+  log.add('soc',(t.active?'Threat ACTIVATED · ':'Threat stood down · ')+t.name,'THREAT',t.active?'hold':'ok');
+  log.add('soc','Defense posture → '+posture(),'POSTURE',posture()==='NORMAL'?'ok':'hold');
+  render();
+}
 
 /* ---- real risk engine ---- */
 var HOLD=70;
@@ -155,14 +203,17 @@ var LEX=[
   {re:/(urgent|immediately|right now|act fast|deadline|stayed on the phone)/i,p:"impersonation",w:15},{re:/(met (him|her|them) online|dating|never met)/i,p:"romance",w:30},
   {re:/(marketplace|facebook|ebay|gumtree|listing|forecourt|dealer)/i,p:"purchase",w:10},{re:/(invoice|supplier|new bank details|changed.*details)/i,p:"invoice",w:25},
 ];
-var CHOICE={contacted_yes:20,who_bank_police:35,who_investment:30,who_online:25,who_seller:10,who_boss:20,safe_yes:40,secret_yes:35};
+var CHOICE={contacted_yes:20,who_bank_police:35,who_investment:30,who_online:25,who_seller:10,who_boss:20,safe_yes:40,secret_yes:35,normal_bill:0,arrears_prompt:60};
 function analyze(input){var d=0,sig=[];if(input.choice&&CHOICE[input.choice]!=null){d+=CHOICE[input.choice];sig.push(input.choice);}if(input.free){LEX.forEach(function(s){if(s.re.test(input.free)){d+=s.w;sig.push(PATTERNS[s.p]);}});}return{delta:d,sig:sig};}
 function assess(amt,acct,pe){var reasons=[],s=0;
+  var adv=advisoriesTargeting(pe.name);
   if(pe.isNew){s+=30;reasons.push("First time paying this new payee");}
   if(amt>=50000){s+=20;reasons.push("Large amount (£500 or more)");}
   if(amt>acct.bal*0.5){s+=15;reasons.push("More than half this balance");}
   if(/safe|secure|protect|acct safety/i.test(pe.name)){s+=25;reasons.push("Payee name resembles a 'safe account' lure");}
-  return{review:s>=40,score:s,reasons:reasons};}
+  var review=s>=40;
+  if(adv.length){review=true;reasons.unshift("Trusted payee under active threat advisory — "+adv[0].name);}
+  return{review:review,score:s,reasons:reasons,advisory:adv[0]||null};}
 
 /* ---- real hash-chained audit ---- */
 function Log(){this.c=[];}
@@ -185,6 +236,11 @@ var FLOW=[
    answers:[{l:"No",choice:'safe_no'},{l:"Yes",choice:'safe_yes'}]},
   {id:'detail',ai:"Last thing — in your own words, what were you told? (Type a sentence; I read this directly.)",free:true},
 ];
+// Scoped, entity-specific flow used when a threat advisory targets this payee.
+function advisoryFlow(payeeName,advName){return [
+  {id:'prompted',ai:"There's currently a surge in scams impersonating "+payeeName+" ("+advName+"). I know this payment normally just goes through — so quickly: are you paying your usual bill, or did you get a call, text or email prompting this payment?",
+   answers:[{l:"Just my normal bill — like every month",choice:'normal_bill'},{l:"I got a text saying my account is in arrears",choice:'arrears_prompt'}]},
+];}
 
 function openPay(prefill){
   pay={from:'cur',payeeId:'',amount:'',ref:'',adding:false,np:{name:'',sort:'',num:''}};
@@ -207,29 +263,31 @@ function review(){
   if(amt>a.bal){alert("That's more than the balance in this account.");return;}
   pay.amt=amt;pay.payeeName=pe.name;pay.mask=pe.mask;pay.pe=pe;
   log.add('customer','Payment started · '+fmt(amt)+' → '+pe.name,'PAY');
-  var r=assess(amt,a,pe);pay.assess=r;pay.score=0;pay.msgs=[];pay.turn=0;pay.typing=false;pay.free='';
-  log.add('rules-engine',r.review?'Rules: new payee + amount → NEEDS REVIEW':'Rules: trusted/low risk → CLEAR','RULES',r.review?'':'ok');
+  var r=assess(amt,a,pe);pay.assess=r;pay.advisory=r.advisory;pay.score=0;pay.msgs=[];pay.turn=0;pay.typing=false;pay.free='';
+  pay.flow=r.advisory?advisoryFlow(pe.name,r.advisory.name):FLOW;
+  log.add('rules-engine',r.advisory?('Trusted payee re-screened under advisory '+r.advisory.id):(r.review?'Rules: new payee + amount → NEEDS REVIEW':'Rules: trusted/low risk → CLEAR'),'RULES',r.review?'':'ok');
   view={name:'review'};render();
 }
 function beginInterview(){view={name:'interview'};log.add('vault-protect','AI second pair of eyes engaged','AI');render();}
 
 function answer(input,label){
-  var cur=FLOW[pay.turn];
+  var cur=pay.flow[pay.turn];
   pay.msgs.push({who:'me',text:label||input.free});
   var r=analyze(input);pay.score+=r.delta;
   log.add('vault-protect','Answer reviewed · +'+r.delta+' (total '+pay.score+')','AI',r.delta?'':'ok');
   if(cur.id==='contacted'&&input.choice==='contacted_no'){return finish();}
   pay.turn++;
-  if(pay.turn>=FLOW.length){return finish();}
+  if(pay.turn>=pay.flow.length){return finish();}
   pay.free='';pay.typing=true;render();
-  setTimeout(function(){pay.typing=false;pay.msgs.push({who:'ai',text:FLOW[pay.turn].ai});render();},800);
+  setTimeout(function(){pay.typing=false;pay.msgs.push({who:'ai',text:pay.flow[pay.turn].ai});render();},800);
 }
 function finish(){
   pay.typing=true;render();
   setTimeout(function(){
-    pay.typing=false;var hold=pay.score>=HOLD;
-    if(hold){log.add('vault-protect','Safe-account typology → HOLD','HOLD','hold');log.add('vault-protect','Payment held · money never left account','HOLD','hold');view={name:'held'};}
-    else{log.add('vault-protect','No coercion fingerprint → RELEASE','AI','ok');commit();return;}
+    pay.typing=false;var thr=holdThreshold();var hold=pay.score>=thr;
+    var infl=pay.advisory?(' · influenced by advisory '+pay.advisory.id):'';
+    if(hold){log.add('vault-protect','Coercion fingerprint → HOLD (score '+pay.score+' ≥ '+thr+')'+infl,'HOLD','hold');log.add('vault-protect','Payment held · money never left account','HOLD','hold');view={name:'held'};}
+    else{log.add('vault-protect','No coercion fingerprint → RELEASE (score '+pay.score+' < '+thr+')'+infl,'AI','ok');commit();return;}
     render();
   },900);
 }
@@ -238,7 +296,18 @@ function release(){commit();}
 
 /* ---- render ---- */
 var el=function(){return document.getElementById('app')};
-function brand(sub){return '<div class="brandbar"><span class="logo">V</span><b>Vault</b><span class="sub">'+(sub||'')+'</span></div>';}
+function brand(sub){var p=posture();var badge=p!=='NORMAL'?'<span class="pbadge '+p+'">🔒 '+p+'</span>':'';return '<div class="brandbar"><span class="logo">V</span><b>Vault</b><span class="sub">'+(sub||'')+'</span>'+badge+'</div>';}
+function renderSOC(){
+  var p=posture();
+  var vecs=S.threats.map(function(t){
+    return '<div class="vec'+(t.active?' on':'')+'"><div class="vid">'+t.id+' · '+t.cat+'</div><div class="vname">'+esc(t.name)+'</div>'+
+      '<span class="sev '+t.sev+'">'+t.sev+'</span> <span class="trend">'+esc(t.trend)+(t.targetPayee?' · scoped to '+esc(t.targetPayee):'')+'</span>'+
+      '<button class="'+(t.active?'live':'arm')+'" onclick="activateThreat(\''+t.id+'\')">'+(t.active?'● LIVE — stand down':'▶ ACTIVATE')+'</button></div>';
+  }).join('');
+  return '<h3>🛰 Security Operations<span class="internal">🔒 INTERNAL</span></h3><div class="sublabel">Analyst-only · not shown to customers</div>'+
+    '<div class="posture '+p+'">Defense posture: '+p+'</div>'+vecs+
+    '<div class="sublabel" style="margin-top:8px">Activate a vector → posture rises → the customer app re-screens matching payments live, even trusted ones.</div>';
+}
 function tabbar(active){
   function t(k,g,l,act){return '<div class="tab '+(active===k?'active':'')+'" onclick="'+act+'"><span class="gi">'+g+'</span>'+l+'</div>';}
   return '<div class="tabbar">'+t('home','🏠','Accounts','view={name:\'dashboard\'};render()')+t('pay','💸','Pay','openPay()')+t('audit','🛡️','Activity','view={name:\'audit\'};render()')+'</div>';
@@ -255,6 +324,7 @@ function render(){
   else if(view.name==='audit')h=auditScreen();
   el().innerHTML=h;
   var b=el().querySelector('.body');if(b&&view.name==='interview')b.scrollTop=b.scrollHeight;
+  var soc=document.getElementById('soc');if(soc)soc.innerHTML=renderSOC();
 }
 function dashboard(){
   var total=S.accounts.reduce(function(s,a){return s+a.bal},0);
@@ -308,7 +378,10 @@ function interview(){
   '</div>';
 }
 function held(){
-  return brand('Payment held')+'<div class="body"><div class="verdict held"><div class="ico">⏸</div><span class="pill red">PAYMENT HELD</span><h3 style="margin-top:10px">We\'ve stopped this payment</h3><p>This matches a <b>“safe account” scam</b>. No genuine bank or authority asks you to move money to keep it safe. <b>Your '+fmt(pay.amt)+' is still in your account.</b></p></div>'+
+  var body=pay.advisory
+    ? 'Your payment to <b>'+esc(pay.payeeName)+'</b> normally goes straight through — but '+esc(pay.payeeName)+' is under an active scam advisory (<b>'+esc(pay.advisory.name)+'</b>), and you confirmed an unexpected prompt. <b>Your '+fmt(pay.amt)+' is still in your account.</b>'
+    : 'This matches a <b>“safe account” scam</b>. No genuine bank or authority asks you to move money to keep it safe. <b>Your '+fmt(pay.amt)+' is still in your account.</b>';
+  return brand('Payment held')+'<div class="body"><div class="verdict held"><div class="ico">⏸</div><span class="pill red">PAYMENT HELD</span><h3 style="margin-top:10px">We\'ve stopped this payment</h3><p>'+body+'</p></div>'+
   '<div class="banner bad" style="margin-top:14px"><span>📞</span><span>Call us on the number on your card — not any number you were given.</span></div>'+
   '<div class="banner good"><span>📄</span><span><b>Effective warning logged.</b> A hash-chained, timestamped record was created — the proof UK reimbursement rules (PSR) require.</span></div>'+
   '<button class="btn danger" onclick="view={name:\'dashboard\'};render()">Cancel — it was a scam</button>'+

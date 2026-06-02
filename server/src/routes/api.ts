@@ -155,6 +155,29 @@ api.get("/audit", (_req, res) => {
   res.json({ entries: getTrail(), integrity: verifyChain() });
 });
 
+// ---- Security / fraud center ---------------------------------------------
+// All payments, newest first, with payee names resolved — powers the
+// "flagged & held payments" list in the Security Center.
+api.get("/payments", (_req, res) => {
+  const list = [...payments].reverse().map((p) => ({
+    id: p.id,
+    payeeName: getPayee(p.payeeId)?.name ?? p.payeeId,
+    amountPence: p.amountPence,
+    status: p.status,
+    reference: p.reference,
+    createdAt: p.createdAt,
+  }));
+  res.json(list);
+});
+
+api.post("/fraud/report", (req, res) => {
+  const { paymentId } = req.body ?? {};
+  const payment = payments.find((p) => p.id === paymentId);
+  if (payment) payment.status = "cancelled";
+  record("customer", "fraud.reported", { paymentId: paymentId ?? null });
+  res.json({ ok: true });
+});
+
 // ---- Demo control ---------------------------------------------------------
 api.post("/demo/reset", (_req, res) => {
   resetDemo();
