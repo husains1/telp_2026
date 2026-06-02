@@ -81,6 +81,38 @@ the chain breaks. The running scam score is visible per step (20 → 55 → 95 �
 
 ---
 
+## Adaptive threat intelligence — the Security Operations Console
+
+Most banks patch their fraud rules quarterly. Vault changes *how carefully it
+listens* the moment a new scam appears — in seconds. The standalone shows **two
+surfaces side by side**: the customer phone (left) and an analyst-only **Security
+Operations Console** (right).
+
+![Two-surface overview](screenshots/soc-01-overview.png)
+
+A live **threat-intelligence feed** lists attack vectors active in the wild
+(safe-account surge, Thames Water billing-scam surge, AI voice-clone, SIM-swap
+ATO). Activating one raises the bank's **defense posture** (Normal → Heightened →
+Lockdown), which both the rules layer and the conversation read.
+
+### The "Living Trust" beat — a trusted bill, re-screened live
+Trust isn't a permanent flag; it's continuously re-underwritten against live
+intelligence. Thames Water is a *trusted* payee paid every month for years —
+normally it clears instantly. But activate the **Thames Water billing-scam
+surge** advisory and the *same trusted payment* is paused and re-screened:
+
+- *"Just my normal bill"* → reassured, released.
+- *"I got a text saying I'm in arrears"* → unexpected-prompt fingerprint → **held**.
+
+Crucially it's **surgical**: only the named biller changes behaviour — British Gas
+and every other trusted payment still sail through. Same trust status, different
+behaviour, live.
+
+![Living Trust — held under advisory](screenshots/soc-02-living-trust-held.png)
+
+Every posture change and the advisory that influenced each decision are written
+to the hash-chained audit trail — attributable, explainable, regulator-ready.
+
 ## The two-stage engine (what's happening underneath)
 
 1. **Rules layer (cheap, deterministic):** new payee? large amount? > half the
