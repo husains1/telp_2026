@@ -36,13 +36,13 @@ export interface ScamAnalyzer {
 export class RuleBasedAnalyzer implements ScamAnalyzer {
   // Weights for the known multiple-choice answers in the question flow.
   private static CHOICE_WEIGHTS: Record<string, { weight: number; pattern: string }> = {
-    contacted_yes: { weight: 25, pattern: "impersonation_safe_account" },
-    who_bank_police: { weight: 40, pattern: "impersonation_safe_account" },
+    contacted_yes: { weight: 20, pattern: "impersonation_safe_account" },
+    who_bank_police: { weight: 35, pattern: "impersonation_safe_account" },
     who_investment: { weight: 30, pattern: "investment" },
     who_online: { weight: 25, pattern: "romance" },
-    who_seller: { weight: 15, pattern: "purchase" },
+    who_seller: { weight: 10, pattern: "purchase" },
     who_boss: { weight: 20, pattern: "invoice_ceo" },
-    safe_account_yes: { weight: 45, pattern: "impersonation_safe_account" },
+    safe_account_yes: { weight: 40, pattern: "impersonation_safe_account" },
     secrecy_yes: { weight: 35, pattern: "impersonation_safe_account" },
   };
 

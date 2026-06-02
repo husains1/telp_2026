@@ -6,7 +6,7 @@ export interface Account {
   name: string;
   sortCode: string;
   accountNumber: string;
-  type: "current" | "savings";
+  type: "current" | "savings" | "joint";
   balancePence: number;
 }
 

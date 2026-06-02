@@ -11,6 +11,7 @@ import {
   addPayee,
   debit,
   resetDemo,
+  profile,
 } from "../data/store.js";
 import { getTrail, verifyChain, record } from "../audit.js";
 import {
@@ -24,6 +25,7 @@ import type { Payment } from "../types.js";
 export const api = Router();
 
 // ---- Accounts -------------------------------------------------------------
+api.get("/profile", (_req, res) => res.json(profile));
 api.get("/accounts", (_req, res) => res.json(accounts));
 api.get("/payees", (_req, res) => res.json(payees));
 

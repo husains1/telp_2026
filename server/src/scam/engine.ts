@@ -153,7 +153,20 @@ export function answerIntervention(
   }
 
   const current = QUESTION_FLOW[session.step];
-  const analysis = analyst.analyze(answer);
+
+  // Fail-closed: if the analyst errors (e.g. a live LLM times out), we treat
+  // the answer as maximally suspicious and hold. We never fail open on money.
+  let analysis;
+  try {
+    analysis = analyst.analyze(answer);
+  } catch (err) {
+    record("ai-analyst", "intervention.analyst_error_fail_closed", {
+      interventionId,
+      error: (err as Error).message,
+    });
+    session.scamScore = HOLD_THRESHOLD;
+    return finish(session);
+  }
   session.scamScore += analysis.delta;
 
   record("ai-analyst", "intervention.answer_analysed", {
