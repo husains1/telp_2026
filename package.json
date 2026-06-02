@@ -11,6 +11,7 @@
     "build": "npm --prefix server run build && npm --prefix web run build"
   },
   "devDependencies": {
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "playwright": "^1.60.0"
   }
 }
