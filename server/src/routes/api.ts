@@ -14,6 +14,10 @@ import {
   profile,
   getTransactions,
   addTransaction,
+  getThreats,
+  posture,
+  advisoriesTargeting,
+  toggleThreat,
 } from "../data/store.js";
 import { getTrail, verifyChain, record } from "../audit.js";
 import {
@@ -84,17 +88,27 @@ api.post("/payments", (req, res) => {
     markedUrgent: payment.markedUrgent,
   });
 
-  const trigger = assessPayment(payment, account, payee);
+  const advisories = advisoriesTargeting(payee.name);
+  const currentPosture = posture();
+  const trigger = assessPayment(payment, account, payee, advisories);
   record("rules-engine", "payment.assessed", {
     paymentId: payment.id,
     triggerScore: trigger.score,
     intervene: trigger.intervene,
     reasons: trigger.reasons,
+    posture: currentPosture,
+    advisory: advisories[0]?.id ?? null,
   });
 
   if (trigger.intervene) {
     payment.status = "review_required";
-    const { interventionId, question } = startIntervention(payment);
+    const holdThreshold = currentPosture === "LOCKDOWN" ? 45 : currentPosture === "HEIGHTENED" ? 55 : 70;
+    const advisory = advisories[0];
+    const { interventionId, question } = startIntervention(payment, {
+      holdThreshold,
+      advisory: advisory ? { name: advisory.name } : undefined,
+      payeeName: payee.name,
+    });
     return res.json({
       payment,
       intervention: { interventionId, question, trigger },
@@ -176,6 +190,19 @@ api.post("/fraud/report", (req, res) => {
   if (payment) payment.status = "cancelled";
   record("customer", "fraud.reported", { paymentId: paymentId ?? null });
   res.json({ ok: true });
+});
+
+// ---- Threat intelligence / Security Operations ---------------------------
+api.get("/threats", (_req, res) => {
+  res.json({ threats: getThreats(), posture: posture() });
+});
+
+api.post("/threats/:id/toggle", (req, res) => {
+  const t = toggleThreat(req.params.id);
+  if (!t) return res.status(404).json({ error: "Unknown threat" });
+  record("ops-review", t.active ? "threat.activated" : "threat.stood_down", { id: t.id, name: t.name });
+  record("ops-review", "posture.changed", { posture: posture() });
+  res.json({ threats: getThreats(), posture: posture() });
 });
 
 // ---- Demo control ---------------------------------------------------------

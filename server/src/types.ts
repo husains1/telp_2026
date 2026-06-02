@@ -38,6 +38,20 @@ export interface Payment {
   createdAt: string;
 }
 
+export type Posture = "NORMAL" | "HEIGHTENED" | "LOCKDOWN";
+
+export interface Threat {
+  id: string;
+  name: string;
+  category: string;
+  severity: "HIGH" | "CRITICAL";
+  trend: string;
+  /** When set, the advisory is scoped to a specific payee and overrides trust. */
+  targetPayee: string | null;
+  posture: Posture;
+  active: boolean;
+}
+
 export interface Transaction {
   id: string;
   accountId: string;

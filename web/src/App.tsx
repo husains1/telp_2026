@@ -8,6 +8,8 @@ import {
   type Transaction,
   type Question,
   type AuditEntry,
+  type Threat,
+  type Posture,
 } from "./api/client.js";
 
 type View =
@@ -59,12 +61,30 @@ export default function App() {
 
   const [audit, setAudit] = useState<{ entries: AuditEntry[]; valid: boolean }>({ entries: [], valid: true });
 
+  // threat intelligence / posture
+  const [posture, setPosture] = useState<Posture>("NORMAL");
+  const [threats, setThreats] = useState<Threat[]>([]);
+  const [socMode, setSocMode] = useState(() => window.location.hash.replace("#", "") === "soc");
+
   function loadCore() {
     api.profile().then(setProfile);
     api.accounts().then(setAccounts);
     api.payees().then(setPayees);
   }
-  useEffect(() => { api.reset().then(loadCore); }, []);
+  function loadThreats() {
+    api.threats().then((r) => { setPosture(r.posture); setThreats(r.threats); });
+  }
+  // The customer app resets to a clean slate on load; the SOC surface never
+  // resets (so arming a threat there isn't wiped).
+  useEffect(() => { if (!socMode) api.reset().then(loadCore); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Poll the threat feed so the posture badge flips ~live when the SOC arms a vector.
+  useEffect(() => {
+    loadThreats();
+    const iv = setInterval(loadThreats, 2000);
+    const onHash = () => setSocMode(window.location.hash.replace("#", "") === "soc");
+    window.addEventListener("hashchange", onHash);
+    return () => { clearInterval(iv); window.removeEventListener("hashchange", onHash); };
+  }, []);
 
   function openAccount(id: string) {
     api.transactions(id).then(setAccTx);
@@ -145,6 +165,11 @@ export default function App() {
     api.audit().then((r) => setAudit({ entries: [...r.entries].reverse(), valid: r.integrity.valid }));
     setView({ name: "audit" });
   }
+  function toggleThreat(id: string) {
+    api.toggleThreat(id).then((r) => { setThreats(r.threats); setPosture(r.posture); });
+  }
+
+  if (socMode) return SocConsole();
 
   return (
     <div className="phone"><div className="screen">
@@ -165,7 +190,29 @@ export default function App() {
   );
 
   function Brand({ sub }: { sub?: string }) {
-    return <div className="brandbar"><span className="logo">V</span><b>Vault</b><span className="sub">{sub}</span></div>;
+    return <div className="brandbar"><span className="logo">V</span><b>Vault</b><span className="sub">{sub}</span>{posture !== "NORMAL" && <span className={`pbadge ${posture}`}>🔒 {posture}</span>}</div>;
+  }
+  function SocConsole() {
+    return (
+      <div className="soc">
+        <h2>🛰 Security Operations<span className="internal">🔒 INTERNAL</span></h2>
+        <div className="sublabel">Analyst-only surface · not shown to customers (this is <code>/#soc</code>)</div>
+        <div className={`posture ${posture}`}>Defense posture: {posture}</div>
+        {threats.map((t) => (
+          <div key={t.id} className={`vec ${t.active ? "on" : ""}`}>
+            <div className="vid">{t.id} · {t.category}</div>
+            <div className="vname">{t.name}</div>
+            <span className={`sev ${t.severity}`}>{t.severity}</span>{" "}
+            <span className="trend">{t.trend}{t.targetPayee ? ` · scoped to ${t.targetPayee}` : ""}</span>
+            <button className={t.active ? "live" : "arm"} onClick={() => toggleThreat(t.id)}>
+              {t.active ? "● LIVE — stand down" : "▶ ACTIVATE"}
+            </button>
+          </div>
+        ))}
+        <div className="sublabel" style={{ marginTop: 8 }}>Activate a vector → posture rises → the customer app re-screens matching payments live, even trusted ones.</div>
+        <a className="home-link" href="#" onClick={() => { window.location.hash = ""; }}>← back to customer app</a>
+      </div>
+    );
   }
   function Tabs({ active }: { active: string }) {
     return (

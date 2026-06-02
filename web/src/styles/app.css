@@ -74,6 +74,29 @@ select.field{appearance:none}
 .tab.active{color:var(--brand);font-weight:700}.tab .gi{font-size:18px;display:block}
 h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:4px 2px 8px}
 .note{font-size:11px;color:#9aa3b8;margin-top:14px;text-align:center;max-width:340px}
+.pbadge{margin-left:8px;font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;align-self:center}
+.pbadge.HEIGHTENED{background:#fde68a;color:#7c2d12}
+.pbadge.LOCKDOWN{background:#fecaca;color:#7f1d1d}
+/* Security Operations Console (separate analyst surface at #soc) */
+.soc{width:min(560px,94vw);background:#0b1322;border:1px solid #22304d;border-radius:18px;color:#cdd6f4;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.55)}
+.soc h2{margin:0 0 2px;font-size:18px;color:#fff}
+.soc .internal{float:right;font-size:10px;background:#2a1214;color:#f87171;padding:3px 8px;border-radius:5px;letter-spacing:.5px;font-weight:800}
+.soc .sublabel{font-size:12px;color:#7f8db0;margin-bottom:16px}
+.soc .posture{padding:12px 14px;border-radius:11px;margin-bottom:16px;font-weight:800;font-size:14px;letter-spacing:.3px}
+.soc .posture.NORMAL{background:#10241b;color:#36d399;border:1px solid #1c3a2b}
+.soc .posture.HEIGHTENED{background:#2a2310;color:#fbbf24;border:1px solid #4a3c12}
+.soc .posture.LOCKDOWN{background:#2a1214;color:#f87171;border:1px solid #4a1c20}
+.soc .vec{border:1px solid #22304d;border-radius:12px;padding:13px 14px;margin-bottom:11px;background:#0e1726}
+.soc .vec.on{border-color:#5b2330;background:#160f15}
+.soc .vid{font-size:11px;color:#6b7aa0;font-family:ui-monospace,Menlo,monospace}
+.soc .vname{font-size:14px;font-weight:700;color:#e8eaf0;margin:3px 0 5px}
+.soc .sev{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px}
+.soc .sev.HIGH{background:#3a2a10;color:#fbbf24}.soc .sev.CRITICAL{background:#3a1214;color:#f87171}
+.soc .trend{font-size:12px;color:#9aa3b8}
+.soc .vec button{width:100%;margin-top:10px;border:none;border-radius:9px;padding:10px;font-weight:700;font-size:13px;cursor:pointer}
+.soc .arm{background:#1f6feb;color:#fff}
+.soc .live{background:#2a1214;color:#f87171;border:1px solid #5b2330}
+.soc .home-link{display:inline-block;margin-top:6px;color:#7f8db0;font-size:12px;text-decoration:none}
 @media (max-width:480px){
   body{padding:0;background:#000;justify-content:flex-start}
   .head,.note{display:none}

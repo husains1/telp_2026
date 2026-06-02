@@ -44,6 +44,9 @@ export class RuleBasedAnalyzer implements ScamAnalyzer {
     who_boss: { weight: 20, pattern: "invoice_ceo" },
     safe_account_yes: { weight: 40, pattern: "impersonation_safe_account" },
     secrecy_yes: { weight: 35, pattern: "impersonation_safe_account" },
+    // Advisory-scoped (entity re-screen) answers
+    normal_bill: { weight: 0, pattern: "impersonation_safe_account" },
+    arrears_prompt: { weight: 60, pattern: "impersonation_safe_account" },
   };
 
   analyze(input: { choice?: string; freeText?: string }): AnalysisResult {
@@ -52,7 +55,7 @@ export class RuleBasedAnalyzer implements ScamAnalyzer {
 
     if (input.choice && RuleBasedAnalyzer.CHOICE_WEIGHTS[input.choice]) {
       const { weight, pattern } = RuleBasedAnalyzer.CHOICE_WEIGHTS[input.choice];
-      signals.push({ patternId: pattern, label: SCAM_PATTERNS[pattern].label, weight });
+      if (weight > 0) signals.push({ patternId: pattern, label: SCAM_PATTERNS[pattern].label, weight });
       delta += weight;
     }
 

@@ -27,10 +27,16 @@ const NEW_PAYEE_AMOUNT_THRESHOLD = 500_00; // £500
 export function assessPayment(
   payment: Payment,
   account: Account,
-  payee: Payee
+  payee: Payee,
+  advisories: { name: string }[] = []
 ): TriggerResult {
   const reasons: string[] = [];
   let score = 0;
+
+  // Entity-scoped threat advisory overrides a payee's trusted status.
+  if (advisories.length) {
+    reasons.push(`Trusted payee under active threat advisory — ${advisories[0].name}`);
+  }
 
   if (payee.isNew) {
     score += 30;
@@ -53,7 +59,7 @@ export function assessPayment(
     reasons.push("Payee name resembles a 'safe account' lure");
   }
 
-  return { intervene: score >= 40, score, reasons };
+  return { intervene: score >= 40 || advisories.length > 0, score, reasons };
 }
 
 // ---- Step 2: the adaptive conversation -----------------------------------
@@ -70,8 +76,24 @@ interface Session {
   paymentId: string;
   scamScore: number;
   step: number;
-  askedNoContact: boolean;
   finished: boolean;
+  flow: Question[];
+  holdThreshold: number;
+}
+
+/** Scoped, entity-specific conversation used when an advisory targets a payee. */
+function advisoryFlow(payeeName: string, advName: string): Question[] {
+  return [
+    {
+      id: "prompted",
+      text: `There's currently a surge in scams impersonating ${payeeName} (${advName}). I know this payment normally just goes through — so quickly: are you paying your usual bill, or did you get a call, text or email prompting this payment?`,
+      type: "choice",
+      options: [
+        { value: "normal_bill", label: "Just my normal bill — like every month" },
+        { value: "arrears_prompt", label: "I got a text saying my account is in arrears" },
+      ],
+    },
+  ];
 }
 
 const sessions = new Map<string, Session>();
@@ -114,24 +136,34 @@ const QUESTION_FLOW: Question[] = [
   },
 ];
 
-export function startIntervention(payment: Payment): {
+export function startIntervention(
+  payment: Payment,
+  opts: { holdThreshold?: number; advisory?: { name: string }; payeeName?: string } = {}
+): {
   interventionId: string;
   question: Question;
 } {
   const id = `int_${Date.now()}`;
+  const flow =
+    opts.advisory && opts.payeeName
+      ? advisoryFlow(opts.payeeName, opts.advisory.name)
+      : QUESTION_FLOW;
   sessions.set(id, {
     id,
     paymentId: payment.id,
     scamScore: 0,
     step: 0,
-    askedNoContact: false,
     finished: false,
+    flow,
+    holdThreshold: opts.holdThreshold ?? HOLD_THRESHOLD,
   });
   record("ai-analyst", "intervention.opened", {
     interventionId: id,
     paymentId: payment.id,
+    advisory: opts.advisory?.name ?? null,
+    holdThreshold: opts.holdThreshold ?? HOLD_THRESHOLD,
   });
-  return { interventionId: id, question: QUESTION_FLOW[0] };
+  return { interventionId: id, question: flow[0] };
 }
 
 export type InterventionDecision =
@@ -152,7 +184,7 @@ export function answerIntervention(
     throw new Error("Unknown or finished intervention session");
   }
 
-  const current = QUESTION_FLOW[session.step];
+  const current = session.flow[session.step];
 
   // Fail-closed: if the analyst errors (e.g. a live LLM times out), we treat
   // the answer as maximally suspicious and hold. We never fail open on money.
@@ -186,13 +218,13 @@ export function answerIntervention(
   }
 
   session.step += 1;
-  if (session.step >= QUESTION_FLOW.length) {
+  if (session.step >= session.flow.length) {
     return finish(session);
   }
 
   return {
     done: false,
-    question: QUESTION_FLOW[session.step],
+    question: session.flow[session.step],
     scamScore: session.scamScore,
     rationale: analysis.rationale,
   };
@@ -200,11 +232,12 @@ export function answerIntervention(
 
 function finish(session: Session): InterventionDecision {
   session.finished = true;
-  const outcome = session.scamScore >= HOLD_THRESHOLD ? "hold" : "release";
+  const threshold = session.holdThreshold;
+  const outcome = session.scamScore >= threshold ? "hold" : "release";
   const rationale =
     outcome === "hold"
-      ? `Cumulative scam score ${session.scamScore} ≥ ${HOLD_THRESHOLD}. Payment held and escalated to human review — deliberately NOT auto-declined.`
-      : `Cumulative scam score ${session.scamScore} < ${HOLD_THRESHOLD}. No strong scam pattern; payment released.`;
+      ? `Cumulative scam score ${session.scamScore} ≥ ${threshold}. Payment held and escalated to human review — deliberately NOT auto-declined.`
+      : `Cumulative scam score ${session.scamScore} < ${threshold}. No strong scam pattern; payment released.`;
 
   record("ai-analyst", `intervention.decision.${outcome}`, {
     interventionId: session.id,
