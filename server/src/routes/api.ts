@@ -11,6 +11,9 @@ import {
   addPayee,
   debit,
   resetDemo,
+  profile,
+  getTransactions,
+  addTransaction,
 } from "../data/store.js";
 import { getTrail, verifyChain, record } from "../audit.js";
 import {
@@ -24,8 +27,19 @@ import type { Payment } from "../types.js";
 export const api = Router();
 
 // ---- Accounts -------------------------------------------------------------
+api.get("/profile", (_req, res) => res.json(profile));
 api.get("/accounts", (_req, res) => res.json(accounts));
 api.get("/payees", (_req, res) => res.json(payees));
+api.get("/transactions", (req, res) =>
+  res.json(getTransactions(req.query.accountId as string | undefined))
+);
+
+// Record a completed payment in the account's transaction history.
+function recordTxn(payment: Payment): void {
+  const payee = getPayee(payment.payeeId);
+  const desc = (payee?.name ?? "Payment") + (payment.reference ? ` — ${payment.reference}` : "");
+  addTransaction(payment.fromAccountId, desc, -payment.amountPence);
+}
 
 api.post("/payees", (req, res) => {
   const { name, sortCode, accountNumber } = req.body ?? {};
@@ -89,6 +103,7 @@ api.post("/payments", (req, res) => {
 
   // Cleared straight through.
   debit(account.id, amountPence);
+  recordTxn(payment);
   record("rules-engine", "payment.cleared", { paymentId: payment.id });
   res.json({ payment, intervention: null });
 });
@@ -107,6 +122,7 @@ api.post("/interventions/:id/answer", (req, res) => {
         } else {
           payment.status = "cleared";
           debit(payment.fromAccountId, payment.amountPence);
+          recordTxn(payment);
         }
       }
     }
@@ -125,6 +141,7 @@ api.post("/payments/:id/resolve", (req, res) => {
   if (action === "release") {
     payment.status = "released";
     debit(payment.fromAccountId, payment.amountPence);
+    recordTxn(payment);
     record(actor ?? "ops-review", "payment.released_after_hold", { paymentId: payment.id });
   } else {
     payment.status = "cancelled";

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+<title>Vault — Online Banking</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0a5c4f" />
+<style>
+  :root{
+    --ink:#0b1220;--muted:#6b7280;--line:#e9ebf1;--bg:#f4f5f8;
+    --brand:#0a5c4f;--brand2:#12a589;--accent:#1d4ed8;
+    --amber:#b45309;--amberbg:#fff7ed;--greenbg:#ecfdf5;--red:#b91c1c;--redbg:#fef2f2;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+  body{margin:0;background:radial-gradient(1100px 700px at 50% -10%,#16203a,#0a0e1a);color:#e8eaf0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:28px 16px 56px}
+  .head{text-align:center;margin-bottom:18px}
+  .head h1{margin:0 0 4px;font-size:22px;letter-spacing:-.3px}
+  .head p{margin:0;color:#9aa3b8;font-size:13px;max-width:540px}
+  .phone{width:340px;height:724px;background:#000;border-radius:48px;padding:11px;box-shadow:0 30px 70px rgba(0,0,0,.55),inset 0 0 0 2px #2a2a2a;position:relative}
+  .screen{position:relative;width:100%;height:100%;background:var(--bg);border-radius:38px;overflow:hidden;color:var(--ink);display:flex;flex-direction:column}
+  #app{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:124px;height:27px;background:#000;border-radius:0 0 18px 18px;z-index:30}
+  .status{height:48px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 26px 8px;font-size:14px;font-weight:600;flex:0 0 auto;background:#fff}
+  .brandbar{background:var(--brand);color:#fff;padding:12px 20px 14px;display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  .brandbar .logo{width:26px;height:26px;border-radius:7px;background:var(--brand2);display:grid;place-items:center;font-weight:800;font-size:14px;color:#042b25}
+  .brandbar b{font-size:15px}.brandbar .sub{margin-left:auto;opacity:.85;font-size:11px}
+  .nav{padding:10px 16px 8px;display:flex;align-items:center;gap:8px;flex:0 0 auto;background:#fff;border-bottom:1px solid var(--line)}
+  .nav .back{color:var(--brand);font-size:26px;line-height:1;cursor:pointer;width:22px}
+  .nav h2{font-size:16px;margin:0;font-weight:700}
+  .body{padding:16px 16px 22px;overflow-y:auto;flex:1 1 auto}
+  .body::-webkit-scrollbar{display:none}
+  .home{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:124px;height:5px;background:#00000026;border-radius:999px;z-index:30}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;margin-bottom:12px;box-shadow:0 1px 2px rgba(16,24,40,.04)}
+  .acct{display:flex;align-items:center;justify-content:space-between;cursor:pointer}
+  .acct:hover{background:#fafbfc}
+  .acct .nm{font-weight:700;font-size:15px}.acct .ms{color:var(--muted);font-size:12px;margin-top:2px}.acct .bal{font-weight:800;font-size:16px}
+  .label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+  .field{background:#f1f3f7;border-radius:12px;padding:11px 13px;margin-top:6px;font-size:15px;font-weight:600;width:100%;border:1px solid transparent}
+  .field:focus{outline:none;border-color:var(--brand2);background:#fff}
+  select.field{appearance:none}
+  .mt{margin-top:12px}
+  .row{display:flex;justify-content:space-between;align-items:center}
+  .btn{background:var(--brand);color:#fff;border:none;border-radius:14px;padding:15px;width:100%;font-size:16px;font-weight:700;cursor:pointer}
+  .btn:active{transform:translateY(1px)}.btn.sec{background:#eef1f6;color:var(--brand)}.btn.danger{background:var(--red)}.btn:disabled{opacity:.4;cursor:not-allowed}
+  .txn{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+  .txn:last-child{border-bottom:none}.txn .d{color:var(--muted);font-size:11.5px;margin-top:2px}.pos{color:var(--brand)}
+  .banner{border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.45;display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+  .banner.good{background:var(--greenbg);color:#065f46;border:1px solid #b8efdf}
+  .banner.warn{background:var(--amberbg);color:#7c2d12;border:1px solid #fed7aa}
+  .banner.bad{background:var(--redbg);color:#7f1d1d;border:1px solid #fecaca}
+  .pill{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .pill.green{background:var(--greenbg);color:var(--brand)}.pill.red{background:var(--redbg);color:var(--red)}
+  .addp{border:1px dashed var(--line);border-radius:12px;padding:12px;margin-top:8px;background:#fafbfe}
+  .msgs{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+  .msg{max-width:84%;padding:11px 13px;border-radius:16px;font-size:13.5px;line-height:1.45}
+  .msg.ai{background:#fff;border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:5px}
+  .msg.me{background:var(--brand);color:#fff;align-self:flex-end;border-bottom-right-radius:5px}
+  .msg .who{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;opacity:.6;margin-bottom:3px}
+  .typing{display:flex;gap:4px;padding:6px 2px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:#bcc3d4;animation:b 1s infinite}
+  .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+  @keyframes b{0%,60%,100%{opacity:.3}30%{opacity:1}}
+  .answers{display:flex;flex-direction:column;gap:8px}
+  .ans{background:#fff;border:1.5px solid var(--brand);color:var(--brand);border-radius:12px;padding:11px 13px;font-size:13px;font-weight:600;cursor:pointer;text-align:left}
+  .ans:hover{background:var(--greenbg)}
+  .composer{display:flex;gap:8px;align-items:flex-end}
+  .composer textarea{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13.5px;resize:none;font-family:inherit}
+  .composer button{background:var(--brand);color:#fff;border:none;border-radius:12px;padding:11px 14px;font-weight:700;cursor:pointer}
+  .verdict{text-align:center;padding:26px 16px;border-radius:18px}
+  .verdict.held{background:linear-gradient(180deg,#fef2f2,#fff);border:1px solid #fecaca}
+  .verdict.ok{background:linear-gradient(180deg,#ecfdf5,#fff);border:1px solid #b8efdf}
+  .verdict .ico{width:66px;height:66px;border-radius:50%;margin:0 auto 12px;display:grid;place-items:center;font-size:32px;color:#fff}
+  .verdict.held .ico{background:var(--red)}.verdict.ok .ico{background:var(--brand2)}
+  .verdict h3{margin:0 0 6px;font-size:21px}.verdict p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+  .audit{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px}
+  .audit .ln{display:flex;gap:8px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .audit .ts{color:var(--muted);flex:0 0 64px}
+  .tag{font-size:9.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:#eef1f6;color:var(--accent)}
+  .tag.hold{background:var(--redbg);color:var(--red)}.tag.ok{background:var(--greenbg);color:var(--brand)}
+  .hash{color:#aab3c2}
+  .chainok{font-size:11px;color:var(--brand);font-weight:700;margin-top:8px}
+  .chainbad{font-size:11px;color:var(--red);font-weight:700;margin-top:8px}
+  .meter{margin-top:10px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--muted)}
+  .meter .bar{flex:1;height:7px;background:#eef1f6;border-radius:6px;overflow:hidden}
+  .meter .fill{height:100%;background:linear-gradient(90deg,var(--brand2),var(--amber),var(--red));transition:width .4s}
+  .tabbar{flex:0 0 auto;height:56px;border-top:1px solid var(--line);background:#fff;display:flex;justify-content:space-around;align-items:center;padding-bottom:4px}
+  .tab{font-size:10px;color:var(--muted);text-align:center;cursor:pointer}
+  .tab.active{color:var(--brand);font-weight:700}.tab .gi{font-size:18px;display:block}
+  h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin:4px 2px 8px}
+  .note{font-size:11px;color:#9aa3b8;margin-top:14px;text-align:center;max-width:340px}
+  @media (display-mode:standalone),(max-width:480px){
+    body{padding:0;background:#000;justify-content:flex-start}
+    .head,.note{display:none}
+    .phone{width:100vw;height:100vh;height:100dvh;border-radius:0;padding:0;box-shadow:none}
+    .phone .screen{border-radius:0}.phone .notch,.phone .home{display:none}.phone .status{display:none}
+    .brandbar{padding-top:calc(14px + env(safe-area-inset-top))}
+    .nav{padding-top:calc(10px + env(safe-area-inset-top))}
+    .tabbar{padding-bottom:calc(6px + env(safe-area-inset-bottom))}
+  }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Vault — Online Banking</h1>
+    <p>A working banking app. Pay a saved payee and it goes straight through. Send a large amount to a <b>new</b> payee and Vault's scam protection steps in — reading your answers in real time, not from a script.</p>
+  </div>
+  <div class="phone"><div class="screen">
+    <div class="notch"></div>
+    <div class="status"><span>9:41</span><span>5G ▪ 100%</span></div>
+    <div id="app"></div>
+    <div class="home"></div>
+  </div></div>
+  <div class="note">Runs entirely in your browser — no server, no install. Real risk engine + real SHA-256 hash-chained audit (verify it in the Activity tab).</div>
+
+<script>
+"use strict";
+/* ---- real SHA-256 (works on file://) ---- */
+function sha256(ascii){ascii=unescape(encodeURIComponent(ascii));function r(v,a){return(v>>>a)|(v<<(32-a))}var mp=Math.pow,mw=mp(2,32),res="";var words=[],bl=ascii.length*8;var h=sha256.h=sha256.h||[],k=sha256.k=sha256.k||[],pc=k.length,ic={};for(var c=2;pc<64;c++){if(!ic[c]){for(var i=0;i<313;i+=c)ic[i]=c;h[pc]=(mp(c,.5)*mw)|0;k[pc++]=(mp(c,1/3)*mw)|0;}}ascii+="\x80";while(ascii.length%64-56)ascii+="\x00";for(i=0;i<ascii.length;i++){var j=ascii.charCodeAt(i);if(j>>8)return;words[i>>2]|=j<<((3-i)%4)*8;}words[words.length]=(bl/mw)|0;words[words.length]=bl;for(j=0;j<words.length;){var w=words.slice(j,j+=16),oh=h;h=h.slice(0,8);for(i=0;i<64;i++){var w15=w[i-15],w2=w[i-2];var a=h[0],e=h[4];var t1=h[7]+(r(e,6)^r(e,11)^r(e,25))+((e&h[5])^((~e)&h[6]))+k[i]+(w[i]=(i<16)?w[i]:(w[i-16]+(r(w15,7)^r(w15,18)^(w15>>>3))+w[i-7]+(r(w2,17)^r(w2,19)^(w2>>>10)))|0);var t2=(r(a,2)^r(a,13)^r(a,22))+((a&h[1])^(a&h[2])^(h[1]&h[2]));h=[(t1+t2)|0].concat(h);h[4]=(h[4]+t1)|0;}for(i=0;i<8;i++)h[i]=(h[i]+oh[i])|0;}for(i=0;i<8;i++)for(j=3;j+1;j--){var b=(h[i]>>(j*8))&255;res+=((b<16)?0:"")+b.toString(16);}return res;}
+
+var fmt=function(p){return '£'+(p/100).toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2})};
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]})}
+
+/* ---- seed ---- */
+function SEED(){return{
+  accounts:[
+    {id:'cur',name:'Current Account',mask:'••••3491',sort:'04-29-11',bal:1482055},
+    {id:'sav',name:'Savings',mask:'••••8806',sort:'04-29-11',bal:4210000},
+    {id:'joint',name:'Joint Account',mask:'••••1175',sort:'04-29-11',bal:326510},
+  ],
+  payees:[
+    {id:'ll',name:'Jane Foster (Rent)',mask:'••••5520',sort:'20-00-00',isNew:false},
+    {id:'water',name:'Thames Water',mask:'••••9043',sort:'60-80-09',isNew:false},
+    {id:'gas',name:'British Gas',mask:'••••2210',sort:'40-05-30',isNew:false},
+  ],
+  txns:[
+    {acct:'cur',desc:'ACME Corp — Salary',date:'31 May',amt:340000},
+    {acct:'cur',desc:'Jane Foster — Rent',date:'28 May',amt:-145000},
+    {acct:'cur',desc:'Tesco Stores',date:'27 May',amt:-6420},
+    {acct:'cur',desc:'TfL Travel',date:'26 May',amt:-1250},
+    {acct:'sav',desc:'Transfer from Current',date:'25 May',amt:50000},
+    {acct:'joint',desc:"Sainsbury's",date:'24 May',amt:-8840},
+  ],
+};}
+
+/* ---- real risk engine ---- */
+var HOLD=70;
+var PATTERNS={impersonation:"Bank/police impersonation — 'safe account'",investment:"Investment / crypto scam",purchase:"Purchase scam",romance:"Romance scam",invoice:"Invoice / mandate fraud"};
+var LEX=[
+  {re:/safe account/i,p:"impersonation",w:45},{re:/\bbank\b.*(told|asked|said|called|fraud)/i,p:"impersonation",w:30},
+  {re:/(fraud team|security team|police|hmrc|tax)/i,p:"impersonation",w:25},{re:/(protect|move|moving).*(money|funds|savings|account)/i,p:"impersonation",w:20},
+  {re:/(invest|crypto|bitcoin|trading|returns?)/i,p:"investment",w:30},{re:/(don'?t tell|keep.*(secret|private)|not mention|no one)/i,p:"impersonation",w:35},
+  {re:/(urgent|immediately|right now|act fast|deadline|stayed on the phone)/i,p:"impersonation",w:15},{re:/(met (him|her|them) online|dating|never met)/i,p:"romance",w:30},
+  {re:/(marketplace|facebook|ebay|gumtree|listing|forecourt|dealer)/i,p:"purchase",w:10},{re:/(invoice|supplier|new bank details|changed.*details)/i,p:"invoice",w:25},
+];
+var CHOICE={contacted_yes:20,who_bank_police:35,who_investment:30,who_online:25,who_seller:10,who_boss:20,safe_yes:40,secret_yes:35};
+function analyze(input){var d=0,sig=[];if(input.choice&&CHOICE[input.choice]!=null){d+=CHOICE[input.choice];sig.push(input.choice);}if(input.free){LEX.forEach(function(s){if(s.re.test(input.free)){d+=s.w;sig.push(PATTERNS[s.p]);}});}return{delta:d,sig:sig};}
+function assess(amt,acct,pe){var reasons=[],s=0;
+  if(pe.isNew){s+=30;reasons.push("First time paying this new payee");}
+  if(amt>=50000){s+=20;reasons.push("Large amount (£500 or more)");}
+  if(amt>acct.bal*0.5){s+=15;reasons.push("More than half this balance");}
+  if(/safe|secure|protect|acct safety/i.test(pe.name)){s+=25;reasons.push("Payee name resembles a 'safe account' lure");}
+  return{review:s>=40,score:s,reasons:reasons};}
+
+/* ---- real hash-chained audit ---- */
+function Log(){this.c=[];}
+Log.prototype.add=function(who,ev,tag,cls){var prev=this.c.length?this.c[this.c.length-1].hash:"0".repeat(64);
+  var b={seq:this.c.length+1,ts:new Date().toTimeString().slice(0,8),who:who,ev:ev,tag:tag||'',cls:cls||'',prev:prev};
+  b.hash=sha256(JSON.stringify({seq:b.seq,ts:b.ts,who:b.who,ev:b.ev,tag:b.tag,prev:b.prev}));this.c.push(b);return b;};
+Log.prototype.verify=function(){var prev="0".repeat(64);for(var i=0;i<this.c.length;i++){var e=this.c[i];var ex=sha256(JSON.stringify({seq:e.seq,ts:e.ts,who:e.who,ev:e.ev,tag:e.tag,prev:e.prev}));if(e.prev!==prev||e.hash!==ex)return false;prev=e.hash;}return true;};
+
+/* ---- state + navigation ---- */
+var S,view,pay,log;
+function reset(){S=SEED();log=new Log();log.add('system','Signed in · Alex Morgan','INIT');view={name:'dashboard'};pay=null;render();}
+
+/* ---- payment flow ---- */
+var FLOW=[
+  {id:'contacted',ai:"This is a large payment to a new payee, so I'll ask a couple of quick questions to keep you safe. Did someone contact you and ask you to make this payment?",
+   answers:[{l:"No — this was my own idea",choice:'contacted_no'},{l:"Yes, someone contacted me",choice:'contacted_yes'}]},
+  {id:'who',ai:"Thanks. Who did they say they were?",
+   answers:[{l:"A seller / marketplace (e.g. buying something)",choice:'who_seller'},{l:"My bank, the police, or HMRC",choice:'who_bank_police'},{l:"An investment or crypto company",choice:'who_investment'},{l:"Someone I met online",choice:'who_online'}]},
+  {id:'safe',ai:"Were you told to move money to a “safe account”, or that doing this will protect your money?",
+   answers:[{l:"No",choice:'safe_no'},{l:"Yes",choice:'safe_yes'}]},
+  {id:'detail',ai:"Last thing — in your own words, what were you told? (Type a sentence; I read this directly.)",free:true},
+];
+
+function openPay(prefill){
+  pay={from:'cur',payeeId:'',amount:'',ref:'',adding:false,np:{name:'',sort:'',num:''}};
+  if(prefill){pay.from=prefill.from;pay.payeeId=prefill.payeeId;pay.amount=prefill.amount;pay.ref=prefill.ref;}
+  view={name:'pay'};render();
+}
+function setP(k,v){pay[k]=v;}
+function payeeById(id){return S.payees.filter(function(p){return p.id===id})[0]}
+function acctById(id){return S.accounts.filter(function(a){return a.id===id})[0]}
+function toggleAdd(){pay.adding=!pay.adding;render();}
+function saveNew(){var n=pay.np;if(!n.name||!n.sort||!n.num){alert('Enter the payee name, sort code and account number.');return;}
+  var p={id:'p'+Date.now(),name:n.name,mask:'••••'+String(n.num).slice(-4),sort:n.sort,isNew:true};
+  S.payees.push(p);log.add('customer','Added new payee · '+p.name,'PAYEE');pay.payeeId=p.id;pay.adding=false;pay.np={name:'',sort:'',num:''};render();}
+
+function review(){
+  var a=acctById(pay.from),pe=payeeById(pay.payeeId);
+  if(!pe){alert('Choose who to pay.');return;}
+  var amt=Math.round(parseFloat(pay.amount||'0')*100);
+  if(!(amt>0)){alert('Enter an amount greater than 0.');return;}
+  if(amt>a.bal){alert("That's more than the balance in this account.");return;}
+  pay.amt=amt;pay.payeeName=pe.name;pay.mask=pe.mask;pay.pe=pe;
+  log.add('customer','Payment started · '+fmt(amt)+' → '+pe.name,'PAY');
+  var r=assess(amt,a,pe);pay.assess=r;pay.score=0;pay.msgs=[];pay.turn=0;pay.typing=false;pay.free='';
+  log.add('rules-engine',r.review?'Rules: new payee + amount → NEEDS REVIEW':'Rules: trusted/low risk → CLEAR','RULES',r.review?'':'ok');
+  view={name:'review'};render();
+}
+function beginInterview(){view={name:'interview'};log.add('vault-protect','AI second pair of eyes engaged','AI');render();}
+
+function answer(input,label){
+  var cur=FLOW[pay.turn];
+  pay.msgs.push({who:'me',text:label||input.free});
+  var r=analyze(input);pay.score+=r.delta;
+  log.add('vault-protect','Answer reviewed · +'+r.delta+' (total '+pay.score+')','AI',r.delta?'':'ok');
+  if(cur.id==='contacted'&&input.choice==='contacted_no'){return finish();}
+  pay.turn++;
+  if(pay.turn>=FLOW.length){return finish();}
+  pay.free='';pay.typing=true;render();
+  setTimeout(function(){pay.typing=false;pay.msgs.push({who:'ai',text:FLOW[pay.turn].ai});render();},800);
+}
+function finish(){
+  pay.typing=true;render();
+  setTimeout(function(){
+    pay.typing=false;var hold=pay.score>=HOLD;
+    if(hold){log.add('vault-protect','Safe-account typology → HOLD','HOLD','hold');log.add('vault-protect','Payment held · money never left account','HOLD','hold');view={name:'held'};}
+    else{log.add('vault-protect','No coercion fingerprint → RELEASE','AI','ok');commit();return;}
+    render();
+  },900);
+}
+function commit(){var a=acctById(pay.from);a.bal-=pay.amt;S.txns.unshift({acct:pay.from,desc:pay.payeeName+(pay.ref?' — '+pay.ref:''),date:'Today',amt:-pay.amt});log.add('rules-engine','Committed '+fmt(pay.amt)+' → '+pay.payeeName,'COMMIT','ok');view={name:'success'};render();}
+function release(){commit();}
+
+/* ---- render ---- */
+var el=function(){return document.getElementById('app')};
+function brand(sub){return '<div class="brandbar"><span class="logo">V</span><b>Vault</b><span class="sub">'+(sub||'')+'</span></div>';}
+function tabbar(active){
+  function t(k,g,l,act){return '<div class="tab '+(active===k?'active':'')+'" onclick="'+act+'"><span class="gi">'+g+'</span>'+l+'</div>';}
+  return '<div class="tabbar">'+t('home','🏠','Accounts','view={name:\'dashboard\'};render()')+t('pay','💸','Pay','openPay()')+t('audit','🛡️','Activity','view={name:\'audit\'};render()')+'</div>';
+}
+function render(){
+  var h='';
+  if(view.name==='dashboard')h=dashboard();
+  else if(view.name==='account')h=account();
+  else if(view.name==='pay')h=payForm();
+  else if(view.name==='review')h=reviewScreen();
+  else if(view.name==='interview')h=interview();
+  else if(view.name==='held')h=held();
+  else if(view.name==='success')h=success();
+  else if(view.name==='audit')h=auditScreen();
+  el().innerHTML=h;
+  var b=el().querySelector('.body');if(b&&view.name==='interview')b.scrollTop=b.scrollHeight;
+}
+function dashboard(){
+  var total=S.accounts.reduce(function(s,a){return s+a.bal},0);
+  return brand('Alex Morgan')+'<div class="body">'+
+    '<div class="card" style="background:var(--brand);color:#fff;border:none"><div class="label" style="color:#bfe9df">Total balance</div><div style="font-size:30px;font-weight:800;margin-top:4px">'+fmt(total)+'</div><div style="font-size:12px;opacity:.85;margin-top:2px">Vault Premier · protected</div></div>'+
+    '<button class="btn mt" onclick="openPay()">Send money</button>'+
+    '<h3 class="sec" style="margin-top:16px">Accounts</h3>'+
+    S.accounts.map(function(a){return '<div class="card acct" onclick="view={name:\'account\',id:\''+a.id+'\'};render()"><div><div class="nm">'+a.name+'</div><div class="ms">'+a.mask+' · '+a.sort+'</div></div><div class="bal">'+fmt(a.bal)+'</div></div>';}).join('')+
+    '</div>'+tabbar('home');
+}
+function account(){
+  var a=acctById(view.id);var tx=S.txns.filter(function(t){return t.acct===a.id});
+  return brand('')+'<div class="nav"><span class="back" onclick="view={name:\'dashboard\'};render()">‹</span><h2>'+a.name+'</h2></div>'+
+    '<div class="body"><div class="card" style="text-align:center"><div class="label">Available balance</div><div style="font-size:30px;font-weight:800;margin:4px 0">'+fmt(a.bal)+'</div><div class="ms" style="color:var(--muted);font-size:12px">'+a.mask+' · '+a.sort+'</div><button class="btn mt" onclick="openPay({from:\''+a.id+'\'})">Make a payment</button></div>'+
+    '<h3 class="sec">Recent transactions</h3><div class="card">'+(tx.length?tx.map(function(t){return '<div class="txn"><div><div>'+esc(t.desc)+'</div><div class="d">'+t.date+'</div></div><div class="'+(t.amt>0?'pos':'')+'" style="font-weight:700">'+(t.amt>0?'+':'')+fmt(Math.abs(t.amt))+'</div></div>';}).join(''):'<div class="d" style="color:var(--muted);font-size:13px">No transactions yet.</div>')+'</div></div>'+tabbar('home');
+}
+function payForm(){
+  var f=pay;
+  return brand('Send money')+'<div class="nav"><span class="back" onclick="view={name:\'dashboard\'};render()">‹</span><h2>Send money</h2></div>'+
+  '<div class="body">'+
+    '<div class="label">From account</div><select class="field" onchange="setP(\'from\',this.value)">'+S.accounts.map(function(a){return '<option value="'+a.id+'"'+(a.id===f.from?' selected':'')+'>'+a.name+' — '+fmt(a.bal)+'</option>';}).join('')+'</select>'+
+    '<div class="label mt">Pay to</div><select class="field" onchange="setP(\'payeeId\',this.value)"><option value="">Choose a payee…</option>'+S.payees.map(function(p){return '<option value="'+p.id+'"'+(p.id===f.payeeId?' selected':'')+'>'+esc(p.name)+(p.isNew?' (new)':'')+'</option>';}).join('')+'</select>'+
+    '<button class="btn sec mt" onclick="toggleAdd()">'+(f.adding?'✕ Cancel':'+ Add a new payee')+'</button>'+
+    (f.adding?'<div class="addp"><div class="label">Payee name</div><input class="field" value="'+esc(f.np.name)+'" oninput="pay.np.name=this.value" placeholder="e.g. John Smith"><div class="label mt">Sort code</div><input class="field" value="'+esc(f.np.sort)+'" oninput="pay.np.sort=this.value" placeholder="00-00-00"><div class="label mt">Account number</div><input class="field" value="'+esc(f.np.num)+'" oninput="pay.np.num=this.value" placeholder="12345678"><button class="btn mt" onclick="saveNew()">Save payee</button></div>':'')+
+    '<div class="label mt">Amount (£)</div><input class="field" value="'+esc(f.amount)+'" oninput="setP(\'amount\',this.value)" placeholder="0.00" inputmode="decimal">'+
+    '<div class="label mt">Reference</div><input class="field" value="'+esc(f.ref)+'" oninput="setP(\'ref\',this.value)" placeholder="What\'s it for?">'+
+    '<button class="btn mt" '+(f.payeeId?'':'disabled')+' onclick="review()">Continue</button>'+
+    '<p class="d" style="color:var(--muted);font-size:11px;margin-top:12px">Tip: paying a saved payee clears instantly. Add a new payee and send a large amount to see Vault\'s scam protection in action.</p>'+
+  '</div>'+tabbar('pay');
+}
+function reviewScreen(){
+  var clear=!pay.assess.review;
+  return brand('Review')+'<div class="nav"><span class="back" onclick="view={name:\'pay\'};render()">‹</span><h2>Review payment</h2></div>'+
+  '<div class="body"><div class="card"><div class="row"><span class="label">To</span><b>'+esc(pay.payeeName)+'</b></div><div class="row mt"><span class="label">Account</span><span>'+pay.mask+'</span></div><div class="row mt"><span class="label">Amount</span><b style="font-size:18px">'+fmt(pay.amt)+'</b></div><div class="row mt"><span class="label">From</span><span>'+acctById(pay.from).name+'</span></div></div>'+
+  (clear?
+    '<div class="banner good"><span>✓</span><span><b>Cleared instantly.</b> Trusted/low-risk payment. Vault stays out of the way when it\'s safe.</span></div><button class="btn" onclick="commit()">Confirm payment</button>'
+   :'<div class="banner warn"><span>🔎</span><span><b>Quick safety check.</b> '+pay.assess.reasons.join('; ')+'. We\'ll ask a couple of questions before this leaves your account.</span></div><button class="btn" onclick="beginInterview()">Continue</button>')+
+  '<p class="d" style="font-size:11px;color:var(--muted);margin-top:12px">A scam payment and an honest one look <i>identical</i> to the rules layer here — that\'s why the conversation matters.</p></div>';
+}
+function interview(){
+  if(pay.msgs.length===0)pay.msgs.push({who:'ai',text:FLOW[0].ai});
+  var cur=FLOW[pay.turn];
+  var showChips=!pay.typing&&pay.turn<FLOW.length&&pay.msgs[pay.msgs.length-1].who==='ai'&&!cur.free;
+  var showComposer=!pay.typing&&pay.turn<FLOW.length&&pay.msgs[pay.msgs.length-1].who==='ai'&&cur.free;
+  return brand('Safety check')+'<div class="nav"><span class="back" onclick="view={name:\'review\'};render()">‹</span><h2>Vault is checking in</h2></div>'+
+  '<div class="body"><div class="banner good"><span>👀</span><span>A second pair of eyes, grounded in real scam patterns. Answer honestly — this protects you.</span></div>'+
+  '<div class="msgs">'+pay.msgs.map(function(m){return '<div class="msg '+m.who+'"><div class="who">'+(m.who==='ai'?'Vault':'You')+'</div>'+esc(m.text)+'</div>';}).join('')+(pay.typing?'<div class="msg ai"><div class="typing"><i></i><i></i><i></i></div></div>':'')+'</div>'+
+  (showChips?'<div class="answers">'+cur.answers.map(function(a){return '<div class="ans" onclick="answer({choice:\''+a.choice+'\'},'+JSON.stringify(a.l).replace(/"/g,'&quot;')+')">'+esc(a.l)+'</div>';}).join('')+'</div>':'')+
+  (showComposer?'<div class="composer"><textarea rows="2" placeholder="Type what you were told…" oninput="pay.free=this.value">'+esc(pay.free||'')+'</textarea><button onclick="if((pay.free||\'\').trim())answer({free:pay.free},pay.free)">Send</button></div>':'')+
+  '<div class="meter"><div class="bar"><div class="fill" style="width:'+Math.min(pay.score,100)+'%"></div></div><span>scam-likelihood '+pay.score+'/100</span></div>'+
+  '</div>';
+}
+function held(){
+  return brand('Payment held')+'<div class="body"><div class="verdict held"><div class="ico">⏸</div><span class="pill red">PAYMENT HELD</span><h3 style="margin-top:10px">We\'ve stopped this payment</h3><p>This matches a <b>“safe account” scam</b>. No genuine bank or authority asks you to move money to keep it safe. <b>Your '+fmt(pay.amt)+' is still in your account.</b></p></div>'+
+  '<div class="banner bad" style="margin-top:14px"><span>📞</span><span>Call us on the number on your card — not any number you were given.</span></div>'+
+  '<div class="banner good"><span>📄</span><span><b>Effective warning logged.</b> A hash-chained, timestamped record was created — the proof UK reimbursement rules (PSR) require.</span></div>'+
+  '<button class="btn danger" onclick="view={name:\'dashboard\'};render()">Cancel — it was a scam</button>'+
+  '<button class="btn sec mt" onclick="release()">I\'m certain it\'s safe — send anyway</button>'+
+  '<button class="btn sec mt" onclick="view={name:\'audit\'};render()">View activity log</button></div>';
+}
+function success(){
+  return brand('Payment sent')+'<div class="body"><div class="verdict ok"><div class="ico">✓</div><span class="pill green">PAYMENT SENT</span><h3 style="margin-top:10px">'+fmt(pay.amt)+' on its way</h3><p>To <b>'+esc(pay.payeeName)+'</b>. Vault doesn\'t just block big payments — it understands them, and gets out of the way when they\'re genuine.</p></div>'+
+  '<button class="btn" onclick="view={name:\'dashboard\'};render()">Back to accounts</button>'+
+  '<button class="btn sec mt" onclick="view={name:\'audit\'};render()">View activity log</button></div>';
+}
+function auditScreen(){
+  var ok=log.verify();
+  return brand('Tamper-evident')+'<div class="nav"><span class="back" onclick="view={name:\'dashboard\'};render()">‹</span><h2>Activity log</h2></div>'+
+  '<div class="body"><div class="banner good"><span>🛡️</span><span>Every step is hash-chained with real SHA-256. Change any entry and the chain breaks — tamper-evident by design.</span></div>'+
+  '<div class="card audit">'+log.c.map(function(a){return '<div class="ln"><span class="ts">'+a.ts+'</span><span><span class="tag '+a.cls+'">'+a.tag+'</span> '+esc(a.ev)+' <span class="hash">#'+a.seq+' '+a.hash.slice(0,8)+'…</span></span></div>';}).join('')+
+  (ok?'<div class="chainok">✓ Chain verified · '+log.c.length+' entries · genesis → head intact</div>':'<div class="chainbad">⚠ Chain broken</div>')+
+  '</div></div>'+tabbar('audit');
+}
+reset();
+</script>
+</body>
+</html>

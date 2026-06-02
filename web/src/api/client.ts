@@ -6,8 +6,14 @@ export interface Account {
   name: string;
   sortCode: string;
   accountNumber: string;
-  type: "current" | "savings";
+  type: "current" | "savings" | "joint";
   balancePence: number;
+}
+
+export interface Profile {
+  name: string;
+  tier: string;
+  dailyLimitPence: number;
 }
 
 export interface Payee {
@@ -16,6 +22,14 @@ export interface Payee {
   sortCode: string;
   accountNumber: string;
   isNew: boolean;
+}
+
+export interface Transaction {
+  id: string;
+  accountId: string;
+  desc: string;
+  date: string;
+  amountPence: number;
 }
 
 export interface Question {
@@ -59,7 +73,10 @@ async function http<T>(url: string, opts?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  profile: () => http<Profile>("/api/profile"),
   accounts: () => http<Account[]>("/api/accounts"),
+  transactions: (accountId?: string) =>
+    http<Transaction[]>("/api/transactions" + (accountId ? `?accountId=${accountId}` : "")),
   payees: () => http<Payee[]>("/api/payees"),
   addPayee: (body: { name: string; sortCode: string; accountNumber: string }) =>
     http<Payee>("/api/payees", { method: "POST", body: JSON.stringify(body) }),
@@ -84,3 +101,5 @@ export const api = {
 
 export const fmtGBP = (pence: number) =>
   new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(pence / 100);
+
+export const mask = (accountNumber: string) => `••••${accountNumber.slice(-4)}`;

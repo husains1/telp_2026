@@ -58,9 +58,14 @@ export const SIGNAL_LEXICON: { phrase: RegExp; pattern: string; weight: number }
   { phrase: /(don'?t tell|keep.*(secret|private)|not mention)/i, pattern: "impersonation_safe_account", weight: 35 },
   { phrase: /(urgent|immediately|right now|act fast|deadline)/i, pattern: "impersonation_safe_account", weight: 15 },
   { phrase: /(met (him|her|them) online|dating|never met)/i, pattern: "romance", weight: 30 },
-  { phrase: /(marketplace|facebook|ebay|gumtree|listing|deposit)/i, pattern: "purchase", weight: 20 },
+  { phrase: /(marketplace|facebook|ebay|gumtree|listing)/i, pattern: "purchase", weight: 15 },
   { phrase: /(invoice|supplier|new bank details|changed.*details)/i, pattern: "invoice_ceo", weight: 25 },
 ];
 
-/** Score above which we hold and escalate rather than release. */
-export const HOLD_THRESHOLD = 60;
+/**
+ * Score above which we hold and escalate rather than release.
+ * Tuned so the two demo beats separate cleanly: a legitimate car purchase
+ * (buyer contacted a seller) stays well under; a "safe account" impersonation
+ * (bank/police told them, move to protect) shoots well over.
+ */
+export const HOLD_THRESHOLD = 70;

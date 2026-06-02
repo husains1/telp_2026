@@ -6,7 +6,7 @@ export interface Account {
   name: string;
   sortCode: string;
   accountNumber: string;
-  type: "current" | "savings";
+  type: "current" | "savings" | "joint";
   balancePence: number;
 }
 
@@ -36,6 +36,14 @@ export interface Payment {
   markedUrgent: boolean;
   status: PaymentStatus;
   createdAt: string;
+}
+
+export interface Transaction {
+  id: string;
+  accountId: string;
+  desc: string;
+  date: string;
+  amountPence: number; // negative = money out, positive = money in
 }
 
 /** Append-only, hash-chained audit entry — the compliance backbone. */
