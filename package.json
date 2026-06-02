@@ -1,0 +1,16 @@
+{
+  "name": "fortress-bank",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fortress — the bank that assumes the attacker has AI too. Scam Interceptor demo.",
+  "scripts": {
+    "install:all": "npm install && npm --prefix server install && npm --prefix web install",
+    "dev": "concurrently -n server,web -c blue,magenta \"npm --prefix server run dev\" \"npm --prefix web run dev\"",
+    "dev:server": "npm --prefix server run dev",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm --prefix server run build && npm --prefix web run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

@@ -1,0 +1,122 @@
+:root {
+  --bg: #0b0f1a;
+  --panel: #131a2b;
+  --panel-2: #1b2436;
+  --ink: #e8edf6;
+  --muted: #8a97b1;
+  --accent: #3d7eff;
+  --gold: #d9a441;
+  --danger: #e2493b;
+  --ok: #2faa6a;
+  --line: #26314a;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); }
+
+.app { min-height: 100vh; }
+
+.topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 28px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #0e1422, #0b0f1a);
+}
+.brand { display: flex; flex-direction: column; }
+.logo { font-weight: 800; letter-spacing: 2px; font-size: 20px; }
+.tagline { color: var(--muted); font-size: 12px; }
+.reset {
+  background: var(--gold); color: #1a1300; border: none; padding: 10px 16px;
+  border-radius: 8px; font-weight: 700; cursor: pointer;
+}
+
+.grid {
+  display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px;
+  padding: 24px 28px; max-width: 1200px; margin: 0 auto;
+}
+@media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; }
+.panel h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 18px 0 10px; }
+.panel h2:first-child { margin-top: 0; }
+
+.accounts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.account { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.account.savings { border-left: 3px solid var(--gold); }
+.account.current { border-left: 3px solid var(--accent); }
+.acc-name { font-weight: 700; }
+.acc-meta { color: var(--muted); font-size: 12px; margin: 4px 0 10px; }
+.acc-balance { font-size: 22px; font-weight: 800; }
+
+.form { display: grid; gap: 12px; }
+.form label { display: grid; gap: 6px; font-size: 13px; color: var(--muted); }
+.form input, .form select {
+  background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+  padding: 10px 12px; border-radius: 8px; font-size: 15px;
+}
+.form .check { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.primary { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; }
+.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Audit trail */
+.audit { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; max-height: 78vh; overflow: auto; }
+.audit-head { display: flex; justify-content: space-between; align-items: center; }
+.audit-head h3 { margin: 0; font-size: 15px; }
+.integrity { font-size: 12px; padding: 4px 8px; border-radius: 20px; }
+.integrity.ok { background: rgba(47,170,106,.15); color: var(--ok); }
+.integrity.bad { background: rgba(226,73,59,.15); color: var(--danger); }
+.audit ol { list-style: none; padding: 0; margin: 14px 0 0; }
+.audit li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.audit .row { display: flex; justify-content: space-between; gap: 10px; }
+.audit .actor { color: var(--muted); font-size: 13px; }
+.audit .action { font-weight: 600; font-size: 13px; }
+.audit .hash { color: #5e6c8c; font-size: 11px; }
+
+/* Intervention overlay */
+.overlay {
+  position: fixed; inset: 0; background: rgba(4,7,14,.7); backdrop-filter: blur(4px);
+  display: grid; place-items: center; z-index: 50; padding: 20px;
+  animation: fade .2s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.intervention {
+  width: min(560px, 100%); background: var(--panel); border: 1px solid var(--line);
+  border-top: 4px solid var(--gold); border-radius: 16px; padding: 24px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6); animation: pop .25s ease;
+}
+.intervention.held { border-top-color: var(--danger); }
+@keyframes pop { from { transform: translateY(12px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+.intervention header { display: flex; gap: 14px; align-items: flex-start; }
+.intervention .shield { font-size: 30px; }
+.intervention h2 { margin: 0; font-size: 19px; }
+.intervention .sub { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+
+.why { margin: 16px 0; font-size: 13px; color: var(--muted); }
+.why summary { cursor: pointer; }
+.why ul { margin: 8px 0 0; padding-left: 18px; }
+
+.q { margin-top: 8px; }
+.qtext { font-size: 16px; font-weight: 600; margin: 8px 0 14px; }
+.options { display: grid; gap: 10px; }
+.options button, .freetext button {
+  text-align: left; background: var(--panel-2); border: 1px solid var(--line);
+  color: var(--ink); padding: 12px 14px; border-radius: 10px; cursor: pointer; font-size: 14px;
+}
+.options button:hover { border-color: var(--accent); }
+.freetext { display: grid; gap: 10px; }
+.freetext textarea { background: var(--panel-2); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 12px; font-size: 14px; resize: vertical; }
+.freetext button { text-align: center; background: var(--accent); border: none; color: white; font-weight: 700; }
+
+.decision { margin-top: 8px; }
+.decision h3 { margin: 0 0 8px; }
+.decision.hold { color: var(--ink); }
+.decision .rationale { font-size: 12px; color: var(--muted); background: var(--panel-2); padding: 10px; border-radius: 8px; }
+.decision .actions { display: grid; gap: 10px; margin: 14px 0 8px; }
+.decision .danger { background: var(--danger); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.decision .ghost { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 10px; border-radius: 10px; cursor: pointer; }
+.decision .agency { font-size: 12px; color: var(--gold); text-align: center; }
+.decision button { cursor: pointer; }
+
+.scoremeter { margin-top: 18px; display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--muted); }
+.scoremeter .bar { flex: 1; height: 8px; background: var(--panel-2); border-radius: 6px; overflow: hidden; }
+.scoremeter .fill { height: 100%; background: linear-gradient(90deg, var(--ok), var(--gold), var(--danger)); transition: width .4s ease; }
