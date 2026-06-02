@@ -151,14 +151,14 @@ export default function App() {
       <div className="notch" />
       <div className="status"><span>9:41</span><span>5G ▪ 100%</span></div>
       <div className="app">
-        {view.name === "dashboard" && <Dashboard />}
-        {view.name === "account" && <AccountScreen id={view.id} />}
-        {view.name === "pay" && <PayForm />}
-        {view.name === "review" && <Review />}
-        {view.name === "interview" && <Interview />}
-        {view.name === "held" && <Held />}
-        {view.name === "success" && <Success />}
-        {view.name === "audit" && <Audit />}
+        {view.name === "dashboard" && Dashboard()}
+        {view.name === "account" && AccountScreen({ id: view.id })}
+        {view.name === "pay" && PayForm()}
+        {view.name === "review" && Review()}
+        {view.name === "interview" && Interview()}
+        {view.name === "held" && Held()}
+        {view.name === "success" && Success()}
+        {view.name === "audit" && Audit()}
       </div>
       <div className="home" />
     </div></div>
@@ -180,7 +180,7 @@ export default function App() {
   function Dashboard() {
     const total = accounts.reduce((s, a) => s + a.balancePence, 0);
     return (<>
-      <Brand sub={profile?.name} />
+      {Brand({ sub: profile?.name })}
       <div className="body">
         <div className="card" style={{ background: "var(--brand)", color: "#fff", border: "none" }}>
           <div className="label" style={{ color: "#bfe9df" }}>Total balance</div>
@@ -196,14 +196,14 @@ export default function App() {
           </button>
         ))}
       </div>
-      <Tabs active="home" />
+      {Tabs({ active: "home" })}
     </>);
   }
 
   function AccountScreen({ id }: { id: string }) {
     const a = accounts.find((x) => x.id === id)!;
     return (<>
-      <Brand />
+      {Brand({})}
       <div className="nav"><button className="back" onClick={() => setView({ name: "dashboard" })}>‹</button><h2>{a.name}</h2></div>
       <div className="body">
         <div className="card" style={{ textAlign: "center" }}>
@@ -222,13 +222,13 @@ export default function App() {
           )) : <div className="d" style={{ color: "var(--muted)", fontSize: 13 }}>No transactions yet.</div>}
         </div>
       </div>
-      <Tabs active="home" />
+      {Tabs({ active: "home" })}
     </>);
   }
 
   function PayForm() {
     return (<>
-      <Brand sub="Send money" />
+      {Brand({ sub: "Send money" })}
       <div className="nav"><button className="back" onClick={() => setView({ name: "dashboard" })}>‹</button><h2>Send money</h2></div>
       <div className="body">
         <div className="label">From account</div>
@@ -254,14 +254,14 @@ export default function App() {
         <button className="btn mt" disabled={!payeeId} onClick={review}>Continue</button>
         <p className="d" style={{ color: "var(--muted)", fontSize: 11, marginTop: 12 }}>Tip: paying a saved payee clears instantly. Add a new payee and send a large amount to see Vault's scam protection.</p>
       </div>
-      <Tabs active="pay" />
+      {Tabs({ active: "pay" })}
     </>);
   }
 
   function Review() {
     if (!ctx) return null;
     return (<>
-      <Brand sub="Review" />
+      {Brand({ sub: "Review" })}
       <div className="nav"><button className="back" onClick={() => setView({ name: "pay" })}>‹</button><h2>Review payment</h2></div>
       <div className="body">
         <div className="card">
@@ -279,7 +279,7 @@ export default function App() {
   function Interview() {
     const isFree = question?.type === "freetext";
     return (<>
-      <Brand sub="Safety check" />
+      {Brand({ sub: "Safety check" })}
       <div className="nav"><button className="back" onClick={() => setView({ name: "review" })}>‹</button><h2>Vault is checking in</h2></div>
       <div className="body">
         <div className="banner good"><span>👀</span><span>A second pair of eyes, grounded in real scam patterns. Answer honestly — this protects you.</span></div>
@@ -305,7 +305,7 @@ export default function App() {
   function Held() {
     if (!ctx) return null;
     return (<>
-      <Brand sub="Payment held" />
+      {Brand({ sub: "Payment held" })}
       <div className="body">
         <div className="verdict held">
           <div className="ico">⏸</div>
@@ -326,7 +326,7 @@ export default function App() {
   function Success() {
     if (!ctx) return null;
     return (<>
-      <Brand sub="Payment sent" />
+      {Brand({ sub: "Payment sent" })}
       <div className="body">
         <div className="verdict ok">
           <div className="ico">✓</div>
@@ -342,7 +342,7 @@ export default function App() {
 
   function Audit() {
     return (<>
-      <Brand sub="Tamper-evident" />
+      {Brand({ sub: "Tamper-evident" })}
       <div className="nav"><button className="back" onClick={() => setView({ name: "dashboard" })}>‹</button><h2>Activity log</h2></div>
       <div className="body">
         <div className="banner good"><span>🛡️</span><span>Every step is hash-chained with real SHA-256. Change any entry and the chain breaks — tamper-evident by design.</span></div>
@@ -356,7 +356,7 @@ export default function App() {
           {audit.valid && <div className="chainok">✓ Chain verified · {audit.entries.length} entries · genesis → head intact</div>}
         </div>
       </div>
-      <Tabs active="audit" />
+      {Tabs({ active: "audit" })}
     </>);
   }
 }
