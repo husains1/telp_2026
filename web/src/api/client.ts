@@ -32,6 +32,19 @@ export interface Transaction {
   amountPence: number;
 }
 
+export type Posture = "NORMAL" | "HEIGHTENED" | "LOCKDOWN";
+
+export interface Threat {
+  id: string;
+  name: string;
+  category: string;
+  severity: "HIGH" | "CRITICAL";
+  trend: string;
+  targetPayee: string | null;
+  posture: Posture;
+  active: boolean;
+}
+
 export interface Question {
   id: string;
   text: string;
@@ -97,6 +110,9 @@ export const api = {
   audit: () =>
     http<{ entries: AuditEntry[]; integrity: { valid: boolean; brokenAt?: number } }>("/api/audit"),
   reset: () => http("/api/demo/reset", { method: "POST" }),
+  threats: () => http<{ threats: Threat[]; posture: Posture }>("/api/threats"),
+  toggleThreat: (id: string) =>
+    http<{ threats: Threat[]; posture: Posture }>(`/api/threats/${id}/toggle`, { method: "POST" }),
 };
 
 export const fmtGBP = (pence: number) =>

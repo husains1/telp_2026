@@ -5,7 +5,7 @@
 // Seed data mirrors the team demo plan (ewoo/telp-demo PLAN.md): customer
 // Alex Morgan, Vault Premier, three accounts, three trusted payees.
 
-import type { Account, Payee, Payment, Transaction } from "../types.js";
+import type { Account, Payee, Payment, Transaction, Threat, Posture } from "../types.js";
 
 export const profile = {
   name: "Alex Morgan",
@@ -59,10 +59,43 @@ const seedTransactions = (): Transaction[] => [
   { id: "t6", accountId: "acc_joint", desc: "Sainsbury's", date: "24 May", amountPence: -88_40 },
 ];
 
+// Threat-intelligence feed — seeded vectors, dormant until armed from the SOC.
+const seedThreats = (): Threat[] => [
+  { id: "TIV-2026-031", name: "Thames Water billing-scam surge", category: "impersonation / APP", severity: "HIGH", trend: "+280% this week", targetPayee: "Thames Water", posture: "HEIGHTENED", active: false },
+  { id: "TIV-2026-014", name: "“Safe account” bank-impersonation surge", category: "impersonation / APP", severity: "HIGH", trend: "+340% this week", targetPayee: null, posture: "HEIGHTENED", active: false },
+  { id: "TIV-2026-008", name: "AI voice-clone impersonation", category: "impersonation", severity: "HIGH", trend: "on the rise", targetPayee: null, posture: "HEIGHTENED", active: false },
+  { id: "TIV-2026-021", name: "SIM-swap + credential-stuffing ATO", category: "account takeover", severity: "CRITICAL", trend: "active campaign", targetPayee: null, posture: "LOCKDOWN", active: false },
+];
+
 export const accounts: Account[] = seedAccounts();
 export const payees: Payee[] = seedPayees();
 export const payments: Payment[] = [];
 export const transactions: Transaction[] = seedTransactions();
+export const threats: Threat[] = seedThreats();
+
+const POSTURE_RANK: Record<Posture, number> = { NORMAL: 0, HEIGHTENED: 1, LOCKDOWN: 2 };
+
+export function getThreats(): Threat[] {
+  return threats;
+}
+export function activeThreats(): Threat[] {
+  return threats.filter((t) => t.active);
+}
+export function posture(): Posture {
+  let best: Posture = "NORMAL";
+  for (const t of activeThreats()) if (POSTURE_RANK[t.posture] > POSTURE_RANK[best]) best = t.posture;
+  return best;
+}
+/** Active advisories scoped to this payee — these override trusted status. */
+export function advisoriesTargeting(payeeName: string): Threat[] {
+  const n = (payeeName || "").toLowerCase();
+  return activeThreats().filter((t) => t.targetPayee && n.includes(t.targetPayee.toLowerCase()));
+}
+export function toggleThreat(id: string): Threat | undefined {
+  const t = threats.find((x) => x.id === id);
+  if (t) t.active = !t.active;
+  return t;
+}
 
 export function getTransactions(accountId?: string): Transaction[] {
   return accountId ? transactions.filter((t) => t.accountId === accountId) : transactions;
@@ -101,5 +134,6 @@ export function resetDemo(): void {
   accounts.splice(0, accounts.length, ...seedAccounts());
   payees.splice(0, payees.length, ...seedPayees());
   transactions.splice(0, transactions.length, ...seedTransactions());
+  threats.splice(0, threats.length, ...seedThreats());
   payments.length = 0;
 }
