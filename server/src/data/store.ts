@@ -5,7 +5,7 @@
 // Seed data mirrors the team demo plan (ewoo/telp-demo PLAN.md): customer
 // Alex Morgan, Vault Premier, three accounts, three trusted payees.
 
-import type { Account, Payee, Payment } from "../types.js";
+import type { Account, Payee, Payment, Transaction } from "../types.js";
 
 export const profile = {
   name: "Alex Morgan",
@@ -50,9 +50,27 @@ function trusted(id: string, name: string, sortCode: string, accountNumber: stri
   return { id, name, sortCode, accountNumber, addedAt: "2023-01-01T09:00:00.000Z", isNew: false };
 }
 
+const seedTransactions = (): Transaction[] => [
+  { id: "t1", accountId: "acc_current", desc: "ACME Corp — Salary", date: "31 May", amountPence: 3_400_00 },
+  { id: "t2", accountId: "acc_current", desc: "Jane Foster — Rent", date: "28 May", amountPence: -1_450_00 },
+  { id: "t3", accountId: "acc_current", desc: "Tesco Stores", date: "27 May", amountPence: -64_20 },
+  { id: "t4", accountId: "acc_current", desc: "TfL Travel", date: "26 May", amountPence: -12_50 },
+  { id: "t5", accountId: "acc_savings", desc: "Transfer from Current", date: "25 May", amountPence: 500_00 },
+  { id: "t6", accountId: "acc_joint", desc: "Sainsbury's", date: "24 May", amountPence: -88_40 },
+];
+
 export const accounts: Account[] = seedAccounts();
 export const payees: Payee[] = seedPayees();
 export const payments: Payment[] = [];
+export const transactions: Transaction[] = seedTransactions();
+
+export function getTransactions(accountId?: string): Transaction[] {
+  return accountId ? transactions.filter((t) => t.accountId === accountId) : transactions;
+}
+
+export function addTransaction(accountId: string, desc: string, amountPence: number): void {
+  transactions.unshift({ id: `t_${Date.now()}`, accountId, desc, date: "Today", amountPence });
+}
 
 export function getAccount(id: string): Account | undefined {
   return accounts.find((a) => a.id === id);
@@ -82,5 +100,6 @@ export function debit(accountId: string, amountPence: number): void {
 export function resetDemo(): void {
   accounts.splice(0, accounts.length, ...seedAccounts());
   payees.splice(0, payees.length, ...seedPayees());
+  transactions.splice(0, transactions.length, ...seedTransactions());
   payments.length = 0;
 }

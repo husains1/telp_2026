@@ -38,6 +38,14 @@ export interface Payment {
   createdAt: string;
 }
 
+export interface Transaction {
+  id: string;
+  accountId: string;
+  desc: string;
+  date: string;
+  amountPence: number; // negative = money out, positive = money in
+}
+
 /** Append-only, hash-chained audit entry — the compliance backbone. */
 export interface AuditEntry {
   seq: number;

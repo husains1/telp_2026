@@ -24,6 +24,14 @@ export interface Payee {
   isNew: boolean;
 }
 
+export interface Transaction {
+  id: string;
+  accountId: string;
+  desc: string;
+  date: string;
+  amountPence: number;
+}
+
 export interface Question {
   id: string;
   text: string;
@@ -67,6 +75,8 @@ async function http<T>(url: string, opts?: RequestInit): Promise<T> {
 export const api = {
   profile: () => http<Profile>("/api/profile"),
   accounts: () => http<Account[]>("/api/accounts"),
+  transactions: (accountId?: string) =>
+    http<Transaction[]>("/api/transactions" + (accountId ? `?accountId=${accountId}` : "")),
   payees: () => http<Payee[]>("/api/payees"),
   addPayee: (body: { name: string; sortCode: string; accountNumber: string }) =>
     http<Payee>("/api/payees", { method: "POST", body: JSON.stringify(body) }),

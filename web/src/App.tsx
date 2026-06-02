@@ -2,165 +2,361 @@ import { useEffect, useState } from "react";
 import {
   api,
   fmtGBP,
-  mask,
   type Account,
   type Payee,
   type Profile,
-  type PaymentResponse,
+  type Transaction,
+  type Question,
+  type AuditEntry,
 } from "./api/client.js";
-import { InterventionDialog } from "./components/InterventionDialog.js";
-import { AuditTrail } from "./components/AuditTrail.js";
+
+type View =
+  | { name: "dashboard" }
+  | { name: "account"; id: string }
+  | { name: "pay" }
+  | { name: "review" }
+  | { name: "interview" }
+  | { name: "held" }
+  | { name: "success" }
+  | { name: "audit" };
+
+interface PayCtx {
+  paymentId: string;
+  payeeName: string;
+  amountPence: number;
+  fromName: string;
+  reasons: string[];
+}
+interface Msg { who: "ai" | "me"; text: string; }
+
+const ACTOR_ICON: Record<string, string> = {
+  customer: "👤", "rules-engine": "⚙️", "ai-analyst": "🛡️", "ops-review": "🏢", system: "🔧",
+};
 
 export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [payees, setPayees] = useState<Payee[]>([]);
-  const [auditKey, setAuditKey] = useState(0);
+  const [view, setView] = useState<View>({ name: "dashboard" });
+  const [accTx, setAccTx] = useState<Transaction[]>([]);
 
   // payment form
-  const [fromAccountId, setFromAccountId] = useState("acc_current");
+  const [from, setFrom] = useState("acc_current");
   const [payeeId, setPayeeId] = useState("");
-  const [amount, setAmount] = useState("8000");
+  const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
-  const [markedUrgent, setMarkedUrgent] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [np, setNp] = useState({ name: "", sortCode: "", accountNumber: "" });
 
-  const [active, setActive] = useState<PaymentResponse | null>(null);
+  // in-flight payment + interview
+  const [ctx, setCtx] = useState<PayCtx | null>(null);
+  const [intId, setIntId] = useState("");
+  const [msgs, setMsgs] = useState<Msg[]>([]);
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [scamScore, setScamScore] = useState(0);
+  const [freeText, setFreeText] = useState("");
+  const [decision, setDecision] = useState<{ hold: boolean; rationale: string } | null>(null);
 
-  function refresh() {
+  const [audit, setAudit] = useState<{ entries: AuditEntry[]; valid: boolean }>({ entries: [], valid: true });
+
+  function loadCore() {
     api.profile().then(setProfile);
     api.accounts().then(setAccounts);
     api.payees().then(setPayees);
-    setAuditKey((k) => k + 1);
   }
-  useEffect(refresh, []);
+  useEffect(() => { api.reset().then(loadCore); }, []);
 
-  // Two demo beats with the SAME amount + SAME "new payee" shape — the
-  // contrast is the whole pitch. One clears, one is held.
-  async function loadBeat(kind: "car" | "scam") {
-    await api.reset();
-    const payee =
-      kind === "car"
-        ? await api.addPayee({ name: "Prestige Motors Ltd", sortCode: "30-16-22", accountNumber: "44102291" })
-        : await api.addPayee({ name: "Safe Account (Fraud Team)", sortCode: "60-12-99", accountNumber: "78451200" });
-    setFromAccountId("acc_current");
-    setPayeeId(payee.id);
-    setAmount("8000");
-    setReference(kind === "car" ? "Used car — balance" : "Account protection");
-    setMarkedUrgent(kind === "scam");
-    api.profile().then(setProfile);
+  function openAccount(id: string) {
+    api.transactions(id).then(setAccTx);
+    setView({ name: "account", id });
+  }
+  function openPay(fromId?: string) {
+    if (fromId) setFrom(fromId);
+    setPayeeId(""); setAmount(""); setReference(""); setAdding(false);
+    setView({ name: "pay" });
+  }
+  async function saveNewPayee() {
+    if (!np.name || !np.sortCode || !np.accountNumber) { alert("Enter the payee name, sort code and account number."); return; }
+    const p = await api.addPayee(np);
+    await api.payees().then(setPayees);
+    setPayeeId(p.id); setAdding(false); setNp({ name: "", sortCode: "", accountNumber: "" });
+  }
+
+  async function review() {
+    const pe = payees.find((p) => p.id === payeeId);
+    const acc = accounts.find((a) => a.id === from);
+    if (!pe || !acc) { alert("Choose who to pay."); return; }
+    const amountPence = Math.round(parseFloat(amount || "0") * 100);
+    if (!(amountPence > 0)) { alert("Enter an amount greater than 0."); return; }
+    if (amountPence > acc.balancePence) { alert("That's more than the balance in this account."); return; }
+
+    const res = await api.createPayment({ fromAccountId: from, payeeId, amountPence, reference, markedUrgent: false });
+    const base: PayCtx = { paymentId: res.payment.id, payeeName: pe.name, amountPence, fromName: acc.name, reasons: [] };
+    if (res.intervention) {
+      base.reasons = res.intervention.trigger.reasons;
+      setCtx(base);
+      setIntId(res.intervention.interventionId);
+      setQuestion(res.intervention.question);
+      setMsgs([]);
+      setScamScore(0);
+      setDecision(null);
+      setView({ name: "review" });
+    } else {
+      setCtx(base);
+      api.accounts().then(setAccounts);
+      setView({ name: "success" });
+    }
+  }
+
+  function beginInterview() {
+    if (question) setMsgs([{ who: "ai", text: question.text }]);
+    setView({ name: "interview" });
+  }
+
+  async function answer(payload: { choice?: string; freeText?: string }, label: string) {
+    setMsgs((m) => [...m, { who: "me", text: label }]);
+    setFreeText("");
+    const res = await api.answer(intId, payload);
+    setScamScore(res.scamScore);
+    if (res.done) {
+      if (res.outcome === "hold") {
+        setDecision({ hold: true, rationale: res.rationale });
+        setView({ name: "held" });
+      } else {
+        api.accounts().then(setAccounts);
+        setDecision({ hold: false, rationale: res.rationale });
+        setView({ name: "success" });
+      }
+    } else {
+      setQuestion(res.question);
+      setMsgs((m) => [...m, { who: "ai", text: res.question.text }]);
+    }
+  }
+
+  async function resolveHeld(action: "release" | "cancel") {
+    if (!ctx) return;
+    await api.resolve(ctx.paymentId, { action, actor: "customer" });
     api.accounts().then(setAccounts);
-    api.payees().then((p) => setPayees(p));
-    setAuditKey((k) => k + 1);
+    if (action === "release") { setDecision({ hold: false, rationale: "Released by customer after warning." }); setView({ name: "success" }); }
+    else setView({ name: "dashboard" });
   }
 
-  async function pay() {
-    const res = await api.createPayment({
-      fromAccountId,
-      payeeId,
-      amountPence: Math.round(parseFloat(amount || "0") * 100),
-      reference,
-      markedUrgent,
-    });
-    setActive(res);
-    setAuditKey((k) => k + 1);
-    if (!res.intervention) refresh();
+  function openAudit() {
+    api.audit().then((r) => setAudit({ entries: [...r.entries].reverse(), valid: r.integrity.valid }));
+    setView({ name: "audit" });
   }
 
   return (
-    <div className="app">
-      <header className="topbar">
-        <div className="brand">
-          <span className="logo">🛡️ VAULT</span>
-          <span className="tagline">security is the product — not the fine print</span>
-        </div>
-        <div className="who">
-          {profile && (
-            <>
-              <span className="cust">{profile.name}</span>
-              <span className="tier">{profile.tier} · {fmtGBP(profile.dailyLimitPence)}/day limit</span>
-            </>
-          )}
-        </div>
-        <div className="scenarios">
-          <button className="ghostbtn" onClick={() => loadBeat("car")}>▶ Beat 2: car (clears)</button>
-          <button className="reset" onClick={() => loadBeat("scam")}>▶ Beat 3: scam (holds)</button>
-        </div>
-      </header>
-
-      <main className="grid">
-        <section className="panel">
-          <h2>Accounts</h2>
-          <div className="accounts">
-            {accounts.map((a) => (
-              <div key={a.id} className={`account ${a.type}`}>
-                <div className="acc-name">{a.name}</div>
-                <div className="acc-meta">{a.sortCode} · {mask(a.accountNumber)}</div>
-                <div className="acc-balance">{fmtGBP(a.balancePence)}</div>
-              </div>
-            ))}
-          </div>
-
-          <h2>Make a payment</h2>
-          <div className="form">
-            <label>
-              From
-              <select value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
-                {accounts.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name} — {fmtGBP(a.balancePence)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              To payee
-              <select value={payeeId} onChange={(e) => setPayeeId(e.target.value)}>
-                <option value="">Select a payee…</option>
-                {payees.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.isNew ? "(new)" : "✓ trusted"}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Amount (£)
-              <input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" />
-            </label>
-            <label>
-              Reference
-              <input value={reference} onChange={(e) => setReference(e.target.value)} />
-            </label>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={markedUrgent}
-                onChange={(e) => setMarkedUrgent(e.target.checked)}
-              />
-              Mark as urgent
-            </label>
-            <button className="primary" onClick={pay} disabled={!payeeId}>
-              Send {amount ? fmtGBP(Math.round(parseFloat(amount || "0") * 100)) : ""}
-            </button>
-          </div>
-        </section>
-
-        <AuditTrail refreshKey={auditKey} />
-      </main>
-
-      {active?.intervention && (
-        <InterventionDialog
-          interventionId={active.intervention.interventionId}
-          paymentId={active.payment.id}
-          amountPence={active.payment.amountPence}
-          firstQuestion={active.intervention.question}
-          trigger={active.intervention.trigger}
-          onClosed={() => {
-            setActive(null);
-            refresh();
-          }}
-        />
-      )}
-    </div>
+    <div className="phone"><div className="screen">
+      <div className="notch" />
+      <div className="status"><span>9:41</span><span>5G ▪ 100%</span></div>
+      <div className="app">
+        {view.name === "dashboard" && <Dashboard />}
+        {view.name === "account" && <AccountScreen id={view.id} />}
+        {view.name === "pay" && <PayForm />}
+        {view.name === "review" && <Review />}
+        {view.name === "interview" && <Interview />}
+        {view.name === "held" && <Held />}
+        {view.name === "success" && <Success />}
+        {view.name === "audit" && <Audit />}
+      </div>
+      <div className="home" />
+    </div></div>
   );
+
+  function Brand({ sub }: { sub?: string }) {
+    return <div className="brandbar"><span className="logo">V</span><b>Vault</b><span className="sub">{sub}</span></div>;
+  }
+  function Tabs({ active }: { active: string }) {
+    return (
+      <div className="tabbar">
+        <button className={`tab ${active === "home" ? "active" : ""}`} onClick={() => setView({ name: "dashboard" })}><span className="gi">🏠</span>Accounts</button>
+        <button className={`tab ${active === "pay" ? "active" : ""}`} onClick={() => openPay()}><span className="gi">💸</span>Pay</button>
+        <button className={`tab ${active === "audit" ? "active" : ""}`} onClick={openAudit}><span className="gi">🛡️</span>Activity</button>
+      </div>
+    );
+  }
+
+  function Dashboard() {
+    const total = accounts.reduce((s, a) => s + a.balancePence, 0);
+    return (<>
+      <Brand sub={profile?.name} />
+      <div className="body">
+        <div className="card" style={{ background: "var(--brand)", color: "#fff", border: "none" }}>
+          <div className="label" style={{ color: "#bfe9df" }}>Total balance</div>
+          <div style={{ fontSize: 30, fontWeight: 800, marginTop: 4 }}>{fmtGBP(total)}</div>
+          <div style={{ fontSize: 12, opacity: .85, marginTop: 2 }}>{profile?.tier} · protected</div>
+        </div>
+        <button className="btn mt" onClick={() => openPay()}>Send money</button>
+        <h3 className="sec" style={{ marginTop: 16 }}>Accounts</h3>
+        {accounts.map((a) => (
+          <button key={a.id} className="card acct" onClick={() => openAccount(a.id)}>
+            <div><div className="nm">{a.name}</div><div className="ms">••••{a.accountNumber.slice(-4)} · {a.sortCode}</div></div>
+            <div className="bal">{fmtGBP(a.balancePence)}</div>
+          </button>
+        ))}
+      </div>
+      <Tabs active="home" />
+    </>);
+  }
+
+  function AccountScreen({ id }: { id: string }) {
+    const a = accounts.find((x) => x.id === id)!;
+    return (<>
+      <Brand />
+      <div className="nav"><button className="back" onClick={() => setView({ name: "dashboard" })}>‹</button><h2>{a.name}</h2></div>
+      <div className="body">
+        <div className="card" style={{ textAlign: "center" }}>
+          <div className="label">Available balance</div>
+          <div style={{ fontSize: 30, fontWeight: 800, margin: "4px 0" }}>{fmtGBP(a.balancePence)}</div>
+          <div className="ms" style={{ color: "var(--muted)", fontSize: 12 }}>••••{a.accountNumber.slice(-4)} · {a.sortCode}</div>
+          <button className="btn mt" onClick={() => openPay(a.id)}>Make a payment</button>
+        </div>
+        <h3 className="sec">Recent transactions</h3>
+        <div className="card">
+          {accTx.length ? accTx.map((t) => (
+            <div className="txn" key={t.id}>
+              <div><div>{t.desc}</div><div className="d">{t.date}</div></div>
+              <div className={t.amountPence > 0 ? "pos" : ""} style={{ fontWeight: 700 }}>{t.amountPence > 0 ? "+" : ""}{fmtGBP(Math.abs(t.amountPence))}</div>
+            </div>
+          )) : <div className="d" style={{ color: "var(--muted)", fontSize: 13 }}>No transactions yet.</div>}
+        </div>
+      </div>
+      <Tabs active="home" />
+    </>);
+  }
+
+  function PayForm() {
+    return (<>
+      <Brand sub="Send money" />
+      <div className="nav"><button className="back" onClick={() => setView({ name: "dashboard" })}>‹</button><h2>Send money</h2></div>
+      <div className="body">
+        <div className="label">From account</div>
+        <select className="field" value={from} onChange={(e) => setFrom(e.target.value)}>
+          {accounts.map((a) => <option key={a.id} value={a.id}>{a.name} — {fmtGBP(a.balancePence)}</option>)}
+        </select>
+        <div className="label mt">Pay to</div>
+        <select className="field" value={payeeId} onChange={(e) => setPayeeId(e.target.value)}>
+          <option value="">Choose a payee…</option>
+          {payees.map((p) => <option key={p.id} value={p.id}>{p.name}{p.isNew ? " (new)" : ""}</option>)}
+        </select>
+        <button className="btn sec mt" onClick={() => setAdding(!adding)}>{adding ? "✕ Cancel" : "+ Add a new payee"}</button>
+        {adding && (
+          <div className="addp">
+            <div className="label">Payee name</div><input className="field" value={np.name} onChange={(e) => setNp({ ...np, name: e.target.value })} placeholder="e.g. John Smith" />
+            <div className="label mt">Sort code</div><input className="field" value={np.sortCode} onChange={(e) => setNp({ ...np, sortCode: e.target.value })} placeholder="00-00-00" />
+            <div className="label mt">Account number</div><input className="field" value={np.accountNumber} onChange={(e) => setNp({ ...np, accountNumber: e.target.value })} placeholder="12345678" />
+            <button className="btn mt" onClick={saveNewPayee}>Save payee</button>
+          </div>
+        )}
+        <div className="label mt">Amount (£)</div><input className="field" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" />
+        <div className="label mt">Reference</div><input className="field" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="What's it for?" />
+        <button className="btn mt" disabled={!payeeId} onClick={review}>Continue</button>
+        <p className="d" style={{ color: "var(--muted)", fontSize: 11, marginTop: 12 }}>Tip: paying a saved payee clears instantly. Add a new payee and send a large amount to see Vault's scam protection.</p>
+      </div>
+      <Tabs active="pay" />
+    </>);
+  }
+
+  function Review() {
+    if (!ctx) return null;
+    return (<>
+      <Brand sub="Review" />
+      <div className="nav"><button className="back" onClick={() => setView({ name: "pay" })}>‹</button><h2>Review payment</h2></div>
+      <div className="body">
+        <div className="card">
+          <div className="row"><span className="label">To</span><b>{ctx.payeeName}</b></div>
+          <div className="row mt"><span className="label">Amount</span><b style={{ fontSize: 18 }}>{fmtGBP(ctx.amountPence)}</b></div>
+          <div className="row mt"><span className="label">From</span><span>{ctx.fromName}</span></div>
+        </div>
+        <div className="banner warn"><span>🔎</span><span><b>Quick safety check.</b> {ctx.reasons.join("; ")}. We'll ask a couple of questions before this leaves your account.</span></div>
+        <button className="btn" onClick={beginInterview}>Continue</button>
+        <p className="d" style={{ fontSize: 11, color: "var(--muted)", marginTop: 12 }}>A scam payment and an honest one look <i>identical</i> to the rules layer — that's why the conversation matters.</p>
+      </div>
+    </>);
+  }
+
+  function Interview() {
+    const isFree = question?.type === "freetext";
+    return (<>
+      <Brand sub="Safety check" />
+      <div className="nav"><button className="back" onClick={() => setView({ name: "review" })}>‹</button><h2>Vault is checking in</h2></div>
+      <div className="body">
+        <div className="banner good"><span>👀</span><span>A second pair of eyes, grounded in real scam patterns. Answer honestly — this protects you.</span></div>
+        <div className="msgs">
+          {msgs.map((m, i) => <div key={i} className={`msg ${m.who}`}><div className="who">{m.who === "ai" ? "Vault" : "You"}</div>{m.text}</div>)}
+        </div>
+        {question && !isFree && (
+          <div className="answers">
+            {question.options?.map((o) => <button key={o.value} className="ans" onClick={() => answer({ choice: o.value }, o.label)}>{o.label}</button>)}
+          </div>
+        )}
+        {question && isFree && (
+          <div className="composer">
+            <textarea rows={2} value={freeText} onChange={(e) => setFreeText(e.target.value)} placeholder="Type what you were told…" />
+            <button onClick={() => freeText.trim() && answer({ freeText }, freeText)}>Send</button>
+          </div>
+        )}
+        <div className="meter"><div className="bar"><div className="fill" style={{ width: `${Math.min(scamScore, 100)}%` }} /></div><span>scam-likelihood {scamScore}/100</span></div>
+      </div>
+    </>);
+  }
+
+  function Held() {
+    if (!ctx) return null;
+    return (<>
+      <Brand sub="Payment held" />
+      <div className="body">
+        <div className="verdict held">
+          <div className="ico">⏸</div>
+          <span className="pill red">PAYMENT HELD</span>
+          <h3 style={{ marginTop: 10 }}>We've stopped this payment</h3>
+          <p>This matches a <b>“safe account” scam</b>. No genuine bank or authority asks you to move money to keep it safe. <b>Your {fmtGBP(ctx.amountPence)} is still in your account.</b></p>
+        </div>
+        <div className="banner bad" style={{ marginTop: 14 }}><span>📞</span><span>Call us on the number on your card — not any number you were given.</span></div>
+        <div className="banner good"><span>📄</span><span><b>Effective warning logged.</b> A hash-chained, timestamped record was created — the proof UK reimbursement rules (PSR) require.</span></div>
+        {decision && <p className="d" style={{ color: "var(--muted)", fontSize: 11, textAlign: "center" }}>{decision.rationale}</p>}
+        <button className="btn danger" onClick={() => resolveHeld("cancel")}>Cancel — it was a scam</button>
+        <button className="btn sec mt" onClick={() => resolveHeld("release")}>I'm certain it's safe — send anyway</button>
+        <button className="btn sec mt" onClick={openAudit}>View activity log</button>
+      </div>
+    </>);
+  }
+
+  function Success() {
+    if (!ctx) return null;
+    return (<>
+      <Brand sub="Payment sent" />
+      <div className="body">
+        <div className="verdict ok">
+          <div className="ico">✓</div>
+          <span className="pill green">PAYMENT SENT</span>
+          <h3 style={{ marginTop: 10 }}>{fmtGBP(ctx.amountPence)} on its way</h3>
+          <p>To <b>{ctx.payeeName}</b>. Vault doesn't just block big payments — it understands them, and gets out of the way when they're genuine.</p>
+        </div>
+        <button className="btn" onClick={() => setView({ name: "dashboard" })}>Back to accounts</button>
+        <button className="btn sec mt" onClick={openAudit}>View activity log</button>
+      </div>
+    </>);
+  }
+
+  function Audit() {
+    return (<>
+      <Brand sub="Tamper-evident" />
+      <div className="nav"><button className="back" onClick={() => setView({ name: "dashboard" })}>‹</button><h2>Activity log</h2></div>
+      <div className="body">
+        <div className="banner good"><span>🛡️</span><span>Every step is hash-chained with real SHA-256. Change any entry and the chain breaks — tamper-evident by design.</span></div>
+        <div className="card audit">
+          {audit.entries.map((e) => (
+            <div className="ln" key={e.seq}>
+              <span className="ts">{ACTOR_ICON[e.actor] ?? "•"} {e.actor}</span>
+              <span>{e.action} <span className="hash">#{e.seq} {e.hash.slice(0, 8)}…</span></span>
+            </div>
+          ))}
+          {audit.valid && <div className="chainok">✓ Chain verified · {audit.entries.length} entries · genesis → head intact</div>}
+        </div>
+      </div>
+      <Tabs active="audit" />
+    </>);
+  }
 }
